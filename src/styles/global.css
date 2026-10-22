@@ -1,0 +1,260 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-hero: 'Anton', 'Chakra Petch', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Chakra Petch', 'Rajdhani', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Rajdhani', 'Chakra Petch', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-void: #000000;
+  --color-panel: #000000;
+  --color-panel-raised: #111111;
+  --color-line: #333333;
+  --color-line-bright: #4c4c4c;
+  --color-ink: #f5f5f5;
+  --color-muted: #cbcbcb;
+  --color-paper: #fcee0a;
+  --color-ink-inverse: #000000;
+  --color-muted-inverse: #333333;
+  --color-acid: #fcee0a;
+  --color-acid-bright: #fbff31;
+  --color-acid-dim: #f2e900;
+  --color-cyan: #00f0ff;
+  --color-cyan-dim: #0099a8;
+  --color-magenta: #fe1038;
+  --color-red: #fe1038;
+  --color-orange: #ff6000;
+  --color-danger: #fe1038;
+
+  --radius-panel: 0.125rem;
+  --shadow-glow-acid: 0 0 24px rgb(252 238 10 / 0.25);
+  --shadow-glow-cyan: 0 0 24px rgb(0 240 255 / 0.2);
+  --shadow-glow-red: 0 0 24px rgb(254 16 56 / 0.2);
+  --ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --animate-flicker: flicker 7s steps(1) infinite;
+  --animate-drift: drift 18s linear infinite;
+  --animate-pulse-line: pulse-line 3s ease-in-out infinite;
+}
+
+@keyframes flicker {
+  0%,
+  18%,
+  22%,
+  25%,
+  53%,
+  57%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  24%,
+  55% {
+    opacity: 0.72;
+  }
+}
+
+@keyframes drift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 48px 48px;
+  }
+}
+
+@keyframes pulse-line {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    min-height: 100%;
+    background-color: var(--color-void);
+  }
+
+  body {
+    min-height: 100svh;
+    margin: 0;
+    background-color: var(--color-void);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    min-height: 100svh;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+
+  ::selection {
+    background-color: var(--color-ink-inverse);
+    color: var(--color-acid);
+  }
+
+  :focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-bright) transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  html[data-reduced-motion='true'] *,
+  html[data-reduced-motion='true'] *::before,
+  html[data-reduced-motion='true'] *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@utility clip-corner {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 0.9rem) 0,
+    100% 0.9rem,
+    100% 100%,
+    0.9rem 100%,
+    0 calc(100% - 0.9rem)
+  );
+}
+
+@utility clip-corner-sm {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 0.45rem) 0,
+    100% 0.45rem,
+    100% 100%,
+    0.45rem 100%,
+    0 calc(100% - 0.45rem)
+  );
+}
+
+@utility clip-button {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 0.9rem), calc(100% - 0.9rem) 100%, 0 100%);
+}
+
+@utility clip-nav {
+  clip-path: polygon(
+    1rem 0,
+    100% 0,
+    100% calc(100% - 1rem),
+    calc(100% - 1rem) 100%,
+    0 100%,
+    0 1rem
+  );
+}
+
+@utility bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(245 245 245 / 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(245 245 245 / 0.07) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+@utility bg-grid-ink {
+  background-image:
+    linear-gradient(to right, rgb(0 0 0 / 0.09) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(0 0 0 / 0.09) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+@utility bg-aurora {
+  background-image:
+    radial-gradient(circle at 12% 18%, rgb(0 240 255 / 0.16), transparent 26rem),
+    radial-gradient(circle at 88% 76%, rgb(254 16 56 / 0.16), transparent 24rem),
+    radial-gradient(circle at 70% 8%, rgb(252 238 10 / 0.08), transparent 20rem);
+}
+
+@utility bg-scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(245 245 245 / 0.045) 0,
+    rgb(245 245 245 / 0.045) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+}
+
+@utility bg-scanlines-ink {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 0.08) 0,
+    rgb(0 0 0 / 0.08) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+}
+
+@utility bg-halftone {
+  background-image: radial-gradient(circle, rgb(0 0 0 / 0.2) 1px, transparent 1.4px);
+  background-size: 7px 7px;
+}
+
+@utility bg-hazard {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--color-acid) 0,
+    var(--color-acid) 0.5rem,
+    var(--color-void) 0.5rem,
+    var(--color-void) 1rem
+  );
+}
+
+@utility bg-glitch {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent 0.35rem,
+    rgb(254 16 56 / 0.55) 0.35rem,
+    rgb(254 16 56 / 0.55) 0.4rem
+  );
+}
+
+@utility bg-dots {
+  background-image: radial-gradient(circle, currentColor 1px, transparent 1.5px);
+  background-size: 6px 6px;
+}
+
+@utility text-glitch {
+  text-shadow:
+    2px 0 var(--color-cyan),
+    -2px 0 var(--color-red);
+}
