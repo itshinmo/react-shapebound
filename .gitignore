@@ -1,0 +1,41 @@
+# Dependencies and build output
+node_modules
+dist
+dist-ssr
+coverage
+.vite
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local environment and machine settings
+.env
+.env.*
+!.env.example
+*.local
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea
+.DS_Store
+
+# Local-only AI task specs
+.ai/specs/*
+!.ai/specs/.gitkeep
+!.ai/specs/mechanics/
+.ai/specs/mechanics/*
+!.ai/specs/mechanics/.gitkeep
+
+# Per-machine AI tool settings; shared adapters are committed
+.claude/settings.local.json
+.opencode/settings.local.json
+
+# Test artifacts
+playwright-report
+test-results

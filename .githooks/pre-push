@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# pre-push: run the local quality gate before code leaves the machine.
+# Installed by `pnpm install` through the `prepare` script.
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+echo "pre-push: running pnpm check..."
+if ! pnpm check; then
+  echo >&2
+  echo "pre-push: checks failed; push aborted." >&2
+  echo "pre-push: run 'pnpm fix' for formatting/lint fixes, then re-run 'pnpm check'." >&2
+  exit 1
+fi
