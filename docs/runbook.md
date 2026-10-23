@@ -110,10 +110,11 @@ hides it and zeroes movement. It also clears on window blur or a hidden tab.
 unmounts. This slice has no saved run state; the player respawns centered. Revisit the gate when run
 state becomes persistent.
 
-**The player can leave the visible screen in fullscreen.** The playfield is intersected with
-`window.visualViewport`, which corrects the mobile Firefox layout-viewport/cutout mismatch. If a
-device still allows the player over the visible edge, record the browser, version, and device; the
-viewport intersection may need another platform-specific rule.
+**The player container is off-screen or the wrong size.** The player container is a static, centered
+square (`PLAYER_CONTAINER_SIZE` in `src/game/player.ts`, currently 320 px). The screen is not a
+collision boundary; on a very small viewport the container may exceed the safe playfield. Adjust the
+starting size or the supported landscape viewport floor. The player should stop at the container
+outline; if it crosses, the container bounds are wrong.
 
 **Testing landscape on desktop.** Use DevTools device emulation or resize the window. On `/play`, a
 portrait viewport should show the blocking overlay; the title and settings should stay usable in both

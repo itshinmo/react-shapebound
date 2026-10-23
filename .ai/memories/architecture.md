@@ -37,8 +37,8 @@ Enforced by `eslint.config.js` (`import-x/no-restricted-paths`, restricted impor
 
 - `src/game/rng.ts` — seeded mulberry32 `Rng`; all randomness goes through it.
 - `src/game/save.ts` — generic `SaveEnvelope<T>`, parse/serialize, schema versioning.
-- `src/game/player.ts` — player stats/state, base stats, movement, bounds, health/shield, damage
-  order. `dtSeconds` is injected; no randomness.
+- `src/game/player.ts` — player stats/state, base stats, `PLAYER_CONTAINER_SIZE` (320, `[unverified]`),
+  movement, container bounds, health/shield, damage order. `dtSeconds` is injected; no randomness.
 - The play feature owns the rAF loop, input, bounds measurement, and DOM transform writes. There is
   no run save yet.
 - Time, randomness, and persistence are inputs/ports; the domain never reaches for them.
@@ -47,13 +47,15 @@ Enforced by `eslint.config.js` (`import-x/no-restricted-paths`, restricted impor
 
 - The play screen is landscape-only; title, settings, and not-found are responsive. `LandscapeGate`
   wraps only `PlayScreen` and replaces the play surface with a rotate overlay in portrait. See
-  ADR-008.
+  ADR-009.
 - Touch `/play` shows a one-tap start overlay that requests fullscreen and attempts
   `screen.orientation.lock('landscape')`. Failure is non-blocking. iOS/Safari cannot lock; the gate is
   the fallback.
 - Keyboard: WASD/arrows. Touch: pointer-driven joystick, touch/pen only, hidden on release. Player
-  position and joystick knob are written via refs, not per-frame React state. Player bounds intersect
-  the safe playfield with `window.visualViewport`.
+  position and joystick knob are written via refs, not per-frame React state.
+- A static, outline-only container (320 px `[unverified]`) is centered in the safe playfield. The
+  player is clamped to its inner bounds; the screen is not a collision boundary. Container size is a
+  future skill-tree upgrade. See ADR-009.
 - The play surface is full-bleed black with a faint grid, no header, and no HUD. The scanline overlay
   is hidden on `/play`.
 
@@ -65,6 +67,7 @@ Enforced by `eslint.config.js` (`import-x/no-restricted-paths`, restricted impor
 - **No runtime network.** Offline is a product requirement (ADR-001).
 - **No CSS Modules.** Tailwind + theme tokens is the styling system (ADR-005).
 - **Landscape-only play surface.** No portrait play layout, header, or HUD without a design pass
-  (ADR-008). Presentation pages stay responsive.
+  (ADR-009). Presentation pages stay responsive. The player is bounded by the container, not the
+  screen.
 
 See `docs/decisions-not-to-fix.md` for the maintained list.
