@@ -25,11 +25,13 @@ belongs in `docs/`.
 
 ## Index
 
-| ADR                                                     | Title                                                          | Status                        | Topic                           |
-| ------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------- | ------------------------------- |
-| [ADR-001](ADR-001-vite-react-spa.md)                    | Vite + React SPA with hash routing                             | Accepted                      | app architecture                |
-| [ADR-002](ADR-002-dom-only-rendering.md)                | DOM-only rendering, no canvas                                  | Accepted                      | rendering                       |
-| [ADR-003](ADR-003-pure-game-domain.md)                  | Pure game domain, seeded RNG, versioned local saves            | Accepted                      | game domain / persistence       |
-| [ADR-004](ADR-004-agent-agnostic-knowledge-layer.md)    | Agent-agnostic knowledge layer and guardrails                  | Accepted                      | process / AI tooling            |
-| [ADR-005](ADR-005-tailwind-and-local-fonts.md)          | Tailwind CSS 4, local fonts, cyberpunk-inspired design         | Accepted (refined by ADR-006) | styling / design system         |
-| [ADR-006](ADR-006-cyberpunk-reference-visual-system.md) | Align the visual system with the live Cyberpunk 2077 reference | Accepted                      | design system / visual identity |
+| ADR                                                          | Title                                                          | Status                        | Topic                           |
+| ------------------------------------------------------------ | -------------------------------------------------------------- | ----------------------------- | ------------------------------- |
+| [ADR-001](ADR-001-vite-react-spa.md)                         | Vite + React SPA with hash routing                             | Accepted                      | app architecture                |
+| [ADR-002](ADR-002-dom-only-rendering.md)                     | DOM-only rendering, no canvas                                  | Accepted                      | rendering                       |
+| [ADR-003](ADR-003-pure-game-domain.md)                       | Pure game domain, seeded RNG, versioned local saves            | Accepted                      | game domain / persistence       |
+| [ADR-004](ADR-004-agent-agnostic-knowledge-layer.md)         | Agent-agnostic knowledge layer and guardrails                  | Accepted                      | process / AI tooling            |
+| [ADR-005](ADR-005-tailwind-and-local-fonts.md)               | Tailwind CSS 4, local fonts, cyberpunk-inspired design         | Accepted (refined by ADR-006) | styling / design system         |
+| [ADR-006](ADR-006-cyberpunk-reference-visual-system.md)      | Align the visual system with the live Cyberpunk 2077 reference | Accepted                      | design system / visual identity |
+| [ADR-007](ADR-007-landscape-only-play-surface.md)            | Landscape-only play surface and best-effort orientation lock   | Superseded by ADR-008         | play surface / platform         |
+| [ADR-008](ADR-008-responsive-presentation-landscape-play.md) | Responsive presentation, landscape-only play screen            | Accepted                      | routing / orientation           |

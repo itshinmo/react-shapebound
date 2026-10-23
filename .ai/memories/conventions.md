@@ -1,6 +1,6 @@
 ---
 description: Naming, imports, Tailwind, testing, comment, and accessibility conventions. Read before writing any code or CSS.
-last-verified: 2026-10-21
+last-verified: 2026-10-23
 ---
 
 # Conventions memory
@@ -26,6 +26,9 @@ The authoritative rules are in `AGENTS.md#non-negotiables`, `docs/architecture.m
 - Keep state local until it genuinely crosses a feature boundary.
 - The game domain is not a React concern. Do not import React in `src/game`.
 - Effects own browser integration (timers, storage, DOM attributes); pure rules do not.
+- Real-time gameplay keeps per-frame position in refs and writes transforms directly. The joystick
+  knob is written on `pointermove` too. Do not mirror either in React state. Player bounds intersect
+  the safe playfield with `window.visualViewport`.
 
 ## Tailwind
 
@@ -40,12 +43,16 @@ The authoritative rules are in `AGENTS.md#non-negotiables`, `docs/architecture.m
 - `font-hero` (Anton) is only for oversized display; `font-display` for UI headings/buttons;
   `font-body` for copy; `font-mono` for HUD labels.
 - Use `SectionLabel` for `/// MODULE_LABEL` markers. Reference-derived art must remain original.
+- The play surface is landscape-only: black + faint grid, no header/HUD. Title and settings are
+  responsive. Joystick circles are the functional exception to the clipped-surface rule.
 
 ## Tests
 
 - Vitest + Testing Library. Query by role, label, or text first; test IDs are a last resort.
 - Test behavior and domain invariants, not implementation details.
 - New domain logic needs unit tests. New interaction needs a component test.
+- Player rules and joystick vector math are unit-tested; the landscape gate and play screen have
+  component tests. Device-only orientation/fullscreen behavior is manual and marked `[unverified]`.
 - Never weaken an assertion to go green.
 
 ## Comments and docs

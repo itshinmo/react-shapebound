@@ -111,7 +111,7 @@ Conventions:
 - Corners are clipped, not rounded. Use `clip-nav` for the top bar, `clip-button` for actions,
   `clip-corner` for panels.
 - `SectionLabel` renders the `/// LABEL` marker with a thin rule and dot tail. Use cyan by default,
-  red for error/scaffold sections, acid for storage/status modules.
+  red for error/warning sections, acid for storage/status modules.
 - Panels: black fill, 1px border, clipped corner. Tones: default grey, acid, cyan, red.
 - Buttons: `primary` acid fill/black text, `secondary` black fill/acid text, `inverse` black fill/acid
   text for yellow fields, `ghost` text-only, `danger` red. Use `inverse` on yellow, `primary` on black.
@@ -130,6 +130,27 @@ Background utilities:
 | `bg-dots`          | Current-color dot field (section-label tails) |
 | `bg-hazard`        | Acid/black diagonal hazard tape               |
 
+### Play surface
+
+The play screen is a deliberate exception to the internal-screen yellow top bar. It is full-bleed
+black with no header and no HUD.
+
+- **Background:** `bg-void` plus a faint `bg-grid` (`opacity-60`). The global scanline overlay is
+  hidden on `/play`; do not add aurora, glitch, or hazard tape to the board.
+- **Player:** an acid square (`bg-acid`, `shadow-glow-acid`) sized from player stats. Position is
+  written as a transform; do not animate its layout properties.
+- **Joystick:** cyan base and knob (`border-cyan/50`, `bg-cyan/10`, `bg-cyan`,
+  `shadow-glow-cyan`). Circular shapes are a functional exception to the clipped-surface rule; do not
+  use the circle treatment for ordinary panels or buttons.
+- **Overlays:** the rotate overlay uses black/ink/cyan and a `role="status"` live region. The touch
+  start overlay uses the `Button` primitive; the acid button needs a cyan focus outline so the focus
+  ring remains visible on black.
+- **Safe areas:** the board background is full-bleed; the playfield is inset with
+  `env(safe-area-inset-*)` so the player stays clear of notches. The app shell also insets in-flow
+  screens from the side cutouts; the play surface is the full-bleed exception.
+- **No visible HUD** in this slice: no health/shield display, visible control hints, timer, points,
+  pause, or exit control. A future HUD needs a design pass.
+
 ## Motion
 
 - Standard transition: 150ms, `ease-snap`, color/border/shadow/transform only.
@@ -137,6 +158,8 @@ Background utilities:
 - Do not animate the giant hero type continuously; the glitch is a static text shadow.
 - Respect both `prefers-reduced-motion` and `html[data-reduced-motion='true']`.
 - Motion never carries information alone.
+- On `/play`, the player and joystick are the only motion. They are essential gameplay feedback, not
+  decoration; reduced motion must not remove them. The board has no ambient animation.
 
 ## Tailwind v4 conventions
 
@@ -159,6 +182,11 @@ Background utilities:
 - **Semantics:** one `h1` per screen, `button` for actions, `Link` for navigation, labels for inputs.
 - **Keyboard:** every action reachable; the settings switch is a real checkbox; skip control focuses
   `<main>` without changing the hash route.
+- **Play surface:** the board is a region with a visually hidden `h1` and movement instructions. The
+  rotate overlay is a `role="status"` live region. The player and joystick are `aria-hidden` visual
+  representations; the domain state is the source of truth.
+- **Play start:** the touch start overlay uses a real `button`. On the acid button, use a cyan focus
+  outline so the ring remains visible against black.
 - **Reduced motion:** system preference and in-app setting both disable drift/flicker/transitions.
 - **Decorative art:** hero SVG, grids, scanlines, halftone, and the board preview are `aria-hidden`.
 - **Color is not the only signal:** status chips include text (`ONLINE`, `PENDING`), not just color.

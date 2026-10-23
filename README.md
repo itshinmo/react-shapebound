@@ -3,9 +3,10 @@
 A single-player, offline browser game built with React, TypeScript, Vite, React Router, and Tailwind
 CSS. Rendered entirely with HTML and CSS — no canvas, no backend.
 
-> **Status: architectural scaffold.** Routing, settings persistence, a pure RNG, a versioned save
-> envelope, and the design system are in place. Gameplay rules are not designed yet; the play screen
-> is explicitly a non-functional board preview.
+> **Status: first playable movement slice.** Routing, settings persistence, a pure RNG, a versioned
+> save envelope, a pure player domain, and the design system are in place. The play screen is a
+> landscape-only board with a square player and keyboard/touch movement. Combat, bosses, points, the
+> skill tree, and the HUD are not built.
 
 ## Stack
 
@@ -37,7 +38,11 @@ pnpm verify     # check + build
 
 ## What works
 
-- Title, play scaffold, settings, and 404 routes.
+- Title, play, settings, and 404 routes.
+- Full-viewport play board with a square player, keyboard movement, and a touch-anchored joystick.
+- Landscape-only play screen with a rotate gate, plus best-effort fullscreen and orientation lock on
+  touch devices. Title and settings pages stay responsive in both orientations.
+- Pure player domain: movement, bounds, health-to-shield conversion, and damage order, with tests.
 - Reduced-motion setting persisted locally, with a two-step local-data reset.
 - Pure seeded RNG and a versioned save envelope with tests.
 - Cyberpunk-inspired design system with a responsive shell.
@@ -45,15 +50,16 @@ pnpm verify     # check + build
 
 ## What is next
 
-Describe the game. The `design-a-mechanic` skill runs a brief → rules → prototype → playtest →
-promote pipeline before rules code is written. `docs/game-design.md` is the skeleton.
+The provisional game vision is in `docs/game-design.md`. The next slice should design combat,
+enemies, and a damage source, then survival scoring, bosses, and the node tree. The HUD is deferred.
+Use the `design-a-mechanic` skill before writing rules code.
 
 ## Structure
 
 ```text
 src/app       router, shell, error boundary
-src/features  title, play, settings, not-found
-src/game      pure RNG and save envelope
+src/features  title, play (landscape gate), settings, not-found
+src/game      pure RNG, save envelope, and player rules
 src/shared    UI primitives, storage, config
 src/styles    Tailwind entry and theme tokens
 docs/         current behavior, design system, runbook

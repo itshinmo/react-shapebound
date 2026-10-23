@@ -1,6 +1,6 @@
 ---
 description: What react-shapebound is, the stack, and where project knowledge lives. Read first in every session.
-last-verified: 2026-10-21
+last-verified: 2026-10-23
 ---
 
 # Overview
@@ -12,8 +12,10 @@ game is rendered with HTML and CSS — no canvas, no WebGL, no backend.
   Tailwind CSS 4, and bundled OFL fonts (Anton, Chakra Petch, Rajdhani, JetBrains Mono).
 - Persistence: `localStorage`, versioned save envelope, local settings.
 - Testing: Vitest + Testing Library. Quality gate: ESLint + Prettier + `tsc` + Vitest.
-- Current state: architectural scaffold. Routing, settings, RNG, save envelope, and the design
-  system exist. Gameplay rules are not designed yet.
+- Current state: first playable movement slice. `/play` is landscape-only with a square player,
+  keyboard movement, a touch joystick, and a pure player domain; title and settings are responsive.
+  Combat, enemies, points, bosses, the node tree, death, and the HUD are not built. The provisional
+  vision is in `docs/game-design.md`.
 
 ## Where knowledge lives
 

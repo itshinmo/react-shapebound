@@ -6,17 +6,25 @@ with HTML and CSS — no canvas, no WebGL, no backend.
 
 ## Current status
 
-The project is an **architectural scaffold**, not a playable game. What exists:
+The project has a **first playable movement slice**, not a complete game. What exists:
 
-- Four routes: title, play scaffold, settings, not-found.
+- Four routes: title, play, settings, not-found.
+- A full-viewport, landscape-only play board with a square player, keyboard movement, and a
+  touch-anchored joystick.
+- A landscape-only play screen with best-effort fullscreen and orientation lock on touch devices.
+  Where the browser cannot lock orientation, a blocking rotate overlay is the fallback. The title,
+  settings, and not-found pages stay responsive in portrait and landscape.
+- A pure player domain for movement, bounds, health-to-shield conversion, and damage order.
 - A local settings provider with persisted reduced-motion preference.
 - A pure seeded RNG and a versioned, generic save envelope.
 - A Tailwind v4 design system aligned with the live Cyberpunk 2077 reference: yellow hero, black
   angular panels, acid/cyan/red palette, heavy condensed type.
 - Strict TypeScript, ESLint, Prettier, Vitest, and a pre-push quality gate.
 
-Gameplay rules, win conditions, and content are not defined yet. The play screen explicitly says so.
-When the game is described, the `design-a-mechanic` pipeline runs before rules code is written.
+The provisional roguelike vision is in `docs/game-design.md`: survival blue points, color-coded
+bosses and currencies, and a node tree. Only movement and the player stat model are implemented.
+Combat, enemies, points, the skill tree, the HUD, and death are not. Run the `design-a-mechanic`
+pipeline before writing the next rules.
 
 ## How it runs
 
@@ -48,5 +56,6 @@ There is no server process, database, API, or runtime network call. `dist/` is a
 
 - No backend, accounts, cloud saves, leaderboards, or telemetry.
 - No canvas/WebGL renderer.
+- No portrait play layout. Presentation pages are responsive; only the game is landscape-only.
 - No installable PWA yet. Offline means “no network after assets load”.
 - No game mechanics invented before the design pipeline runs.

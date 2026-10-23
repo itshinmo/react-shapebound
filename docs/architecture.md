@@ -24,8 +24,8 @@ full gate and update this table.
 
 ```text
 src/app       composition root: router, shell, providers, error boundary
-src/features  screens and feature-owned state (title, play, settings, not-found)
-src/game      pure domain: RNG, save envelope, future rules
+src/features  screens and feature-owned state (title, play, settings, not-found; play owns the gate)
+src/game      pure domain: RNG, save envelope, player rules
 src/shared    cross-cutting primitives: UI, storage helpers, app constants
 src/styles    Tailwind entry, theme tokens, base layer, custom utilities
 src/test      Vitest setup and render helper
@@ -47,19 +47,22 @@ it around the router. Features must not import the app root.
 
 `src/app/app.tsx` uses declarative React Router with `HashRouter`:
 
-| Path        | Screen           | Purpose                                      |
-| ----------- | ---------------- | -------------------------------------------- |
-| `/`         | `TitleScreen`    | Identity, entry points, system status        |
-| `/play`     | `PlayScreen`     | Non-functional board scaffold; rules pending |
-| `/settings` | `SettingsScreen` | Local preferences and data reset             |
-| `*`         | `NotFoundScreen` | Route fallback                               |
+| Path        | Screen           | Purpose                                         |
+| ----------- | ---------------- | ----------------------------------------------- |
+| `/`         | `TitleScreen`    | Identity, entry points, system status           |
+| `/play`     | `PlayScreen`     | Landscape-only movement board; no HUD or combat |
+| `/settings` | `SettingsScreen` | Local preferences and data reset                |
+| `*`         | `NotFoundScreen` | Route fallback                                  |
 
 Hash routing is deliberate (ADR-001). It works from any static subpath without a server rewrite.
 If clean URLs become a requirement, that is an ADR-level change: switch to `BrowserRouter`, configure
 host fallback, and update this doc and the runbook.
 
 `AppShell` renders a skip control, the single `<main id="main-content">`, a scanline overlay, and
-moves focus to main on route changes. Screens render sections, not nested `main` elements.
+moves focus to main on route changes. The scanline overlay is hidden on `/play` so the play surface
+stays a clean black field. The play feature owns `LandscapeGate`; the title, settings, and not-found
+routes remain responsive in portrait and landscape. Screens render sections, not nested `main`
+elements.
 
 ## Settings and local state
 
@@ -84,16 +87,20 @@ not thrown.
 
 ## Game domain
 
-There is no game state or reducer yet — deliberately. The domain currently provides:
+The first domain state is the player. The domain currently provides:
 
 - `src/game/rng.ts` — seeded `mulberry32`; deterministic, non-cryptographic. `next()` returns
   `[0, 1)`, `nextInt(n)` returns an integer in `[0, n)`, `getState()` exposes the cursor for saves.
 - `src/game/save.ts` — generic `SaveEnvelope<T>`, `createSave`, `serializeSave`, `parseSave`, and
   typed parse failures (`invalid-json`, `invalid-envelope`, `unsupported-version`, `invalid-data`).
+- `src/game/player.ts` — `PlayerStats`, `PlayerState`, `PLAYER_BASE_STATS`, `createPlayer`,
+  `clampPlayerToBounds`, `stepPlayer`, and `applyDamage`. Movement is normalized, clamped to bounds,
+  and takes an injected `dtSeconds`. `maxHealth` above 1 becomes shield; damage consumes shield
+  before the single health point. There is no randomness and no damage source yet.
 
-When the game is designed, the rules spec defines the state and transitions. Implement them as pure
-functions/reducer actions in `src/game`, with tests. Time, randomness, and persistence are inputs or
-ports; the domain never reaches for them.
+The next rules spec defines the next state and transitions. Implement them as pure functions/reducer
+actions in `src/game`, with tests. Time, randomness, and persistence are inputs or ports; the domain
+never reaches for them.
 
 ### Future save migrations
 
@@ -106,10 +113,42 @@ old fixtures as tests, and document the upgrade path here. Never silently reinte
   text selection, and CSS layout available (ADR-002).
 - Animate `transform` and `opacity`, not layout properties. Avoid per-frame React state updates for
   decorative effects; prefer CSS.
+- The player transform is written directly through a ref in the `requestAnimationFrame` loop. Do not
+  mirror per-frame position in React state.
 - The scanline overlay is decorative and `aria-hidden`. It is pointer-events-none and must never
-  intercept input.
-- The current board is decorative (`aria-hidden`) and non-functional. Do not present it as gameplay.
+  intercept input. It is hidden on `/play` so the board stays a clean black field.
+- The play surface is functional. The grid, player, joystick, and overlays are DOM elements. The
+  player and joystick are `aria-hidden` visual representations; the player state is the source of
+  truth. The HUD is not built.
 - If a mechanic cannot be expressed well in the DOM, stop and write an RFC rather than adding canvas.
+
+## Landscape, input, and the play surface
+
+- **Play-only gate.** `src/features/play/use-landscape.ts` subscribes to `(orientation: portrait)`
+  and `LandscapeGate` wraps only `PlayScreen`. In portrait it renders a blocking rotate overlay
+  instead of the play surface. The title, settings, and not-found routes stay responsive. Returning
+  to landscape remounts the play surface; in this slice the player respawns centered.
+- **Touch start.** On touch devices, `/play` shows a one-tap start overlay. The tap requests
+  fullscreen on the play surface and attempts `screen.orientation.lock('landscape')`. Both are
+  feature-detected and caught; failure does not block the game. Desktop starts immediately. See
+  [ADR-008](../decisions/ADR-008-responsive-presentation-landscape-play.md).
+- **Fallback.** iOS/Safari and most desktop browsers do not support the lock. The rotate overlay is
+  the only enforcement there. No PWA, manifest, service worker, or native wrapper is used for
+  orientation.
+- **Keyboard.** WASD and arrow keys move the player. Diagonal movement is normalized in the domain;
+  opposite keys cancel. Input clears on window blur and when the document is hidden.
+- **Touch.** Pointer events drive the joystick. It anchors at the first touch/pen point, becomes an
+  analog vector with a dead zone and clamped radius, follows the pointer through capture, and hides
+  on release or cancel. Mouse pointers and secondary touches are ignored. The joystick is a visual
+  indicator, not a separate control. The player vector and the knob transform are written directly
+  from `pointermove`; React state changes only when the joystick appears or disappears.
+- **Bounds.** The safe playfield is intersected with `window.visualViewport` and expressed as
+  `{ left, top, width, height }`. This keeps the player inside the visible screen when a mobile
+  browser's layout viewport is larger than the displayed fullscreen viewport.
+- **Play surface.** Full-bleed black with a faint `bg-grid`, no header, and no HUD. The grid is
+  decorative and `aria-hidden`. A safe-area-inset playfield keeps the player out of notches.
+- **State.** Player position lives in memory and is not saved. The HUD, pause, and a visible exit
+  control are deferred; browser back is the exit path in this slice.
 
 ## Offline behavior
 
@@ -132,16 +171,19 @@ pnpm verify       # check + production build
 
 ## Testing strategy
 
-- Domain: pure unit tests for RNG determinism/range and save envelope parsing/versioning.
+- Domain: pure unit tests for RNG determinism/range, save envelope parsing/versioning, and player
+  spawn, movement, bounds, health-to-shield, and damage order.
 - Storage: fake in-memory storage, failure and malformed-JSON cases.
 - UI: component tests for settings persistence and reset confirmation; routing smoke tests for title
-  and not-found.
+  and not-found; play gate portrait/landscape; play screen without header/HUD and with the touch
+  start overlay; pure joystick vector math.
 - No E2E browser suite yet. Add Playwright when there is real gameplay to exercise.
 
 ## Decisions not to “fix”
 
 See `docs/decisions-not-to-fix.md`. In short: hash URLs, no canvas, no state library yet, Tailwind
-instead of CSS Modules, no runtime network, and a pure domain are intentional.
+instead of CSS Modules, no runtime network, a pure domain, and a landscape-only play surface are
+intentional.
 
 ## Adding a module
 

@@ -59,13 +59,15 @@ failure modes. Offline currently means “no network after load”. See `decisio
 **Do not** add `vite-plugin-pwa` or a hand-written service worker without an ADR and a cache-version
 strategy.
 
-## 8. The play screen is non-functional
+## 8. The play screen is a movement slice, not a full game
 
-**Why:** gameplay rules are not designed. A fake board with fake controls would misrepresent the
-product and create throwaway code. The screen is labelled as a scaffold. See
-`docs/game-design.md`.
+**Why:** the first delivered mechanic is movement on a landscape-only board. The domain has the
+player stats and health/shield model, but combat, enemies, points, the skill tree, the HUD, and death
+are not implemented. Presenting them as if they exist would misrepresent the product. See
+`docs/game-design.md` and [ADR-008](../decisions/ADR-008-responsive-presentation-landscape-play.md).
 
-**Do not** wire the preview grid into a “temporary” game loop. Design the mechanic first.
+**Do not** add temporary combat, economy, or a HUD to “fill out” the board. Design the next mechanic
+with `design-a-mechanic` first.
 
 ## 9. The landing page is yellow-dominant
 

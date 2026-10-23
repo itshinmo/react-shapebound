@@ -20,10 +20,10 @@ is a React + TypeScript single-page app built with Vite and React Router. The ga
 entirely with HTML and CSS — no canvas, no WebGL, no game engine dependency, no backend. It must
 keep working with no network connection after the assets load.
 
-Gameplay rules are not designed yet. The current app is an architectural scaffold: routing,
-settings persistence, a pure RNG, and a versioned save envelope are in place. Do not invent game
-mechanics. When the author describes the game, use the `design-a-mechanic` skill before writing
-rules code.
+The first playable slice is a landscape-only board with a square player, keyboard/touch movement,
+and a pure player domain (movement, bounds, health/shield). The roguelike loop — survival points,
+bosses, boss currencies, the node tree, combat, death, and the HUD — is not implemented. Do not
+invent those mechanics. Use the `design-a-mechanic` skill before writing the next rules code.
 
 ## Commands
 
@@ -50,8 +50,8 @@ flags that are not documented here.
 
 ```text
 src/app       composition root: router, shell, providers, error boundary
-src/features  screens and feature-owned state (title, play, settings, not-found)
-src/game      pure domain: RNG, save envelope, and future game rules
+src/features  screens and feature-owned state (title, play, settings, not-found; play owns the gate)
+src/game      pure domain: RNG, save envelope, player rules
 src/shared    cross-cutting primitives: UI, storage helpers, app constants
 ```
 
@@ -154,6 +154,9 @@ column, review the right column **in the same change**.
 
 - Every screen must be usable with a keyboard, have a visible focus state, and respect
   `prefers-reduced-motion` and the in-app reduced-motion setting.
+- The play surface is landscape-only and full-bleed. Do not add a portrait play layout, a header, or
+  a HUD to it without a design pass. The title, settings, and presentation pages stay responsive in
+  both orientations.
 - Use semantic HTML first: `button` for actions, `a`/`Link` for navigation, headings in order,
   labels for inputs. Do not put click handlers on plain `div`s.
 - Use the semantic color tokens (`void`, `panel`, `paper`, `ink`, `ink-inverse`, `muted`, `acid`,
