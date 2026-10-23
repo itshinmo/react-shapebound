@@ -43,6 +43,9 @@ The authoritative rules are in `AGENTS.md#non-negotiables`, `docs/architecture.m
 - `font-hero` (Anton) is only for oversized display; `font-display` for UI headings/buttons;
   `font-body` for copy; `font-mono` for HUD labels.
 - Use `SectionLabel` for `/// MODULE_LABEL` markers. Reference-derived art must remain original.
+- Clipped surfaces use `clip-border` + `--clip-border`/`--clip-fill`, never `border-*` or `bg-*`; the
+  inset `::before` layer is the only border that survives the diagonal. Presentation pages use the
+  shared `SiteHeader` rendered once by `PresentationLayout`; `/play` is headerless and outside it.
 - The play surface is landscape-only: black + faint grid, a static outline container, no header/HUD.
   Title and settings are responsive. Joystick circles are the functional exception to the
   clipped-surface rule.
@@ -66,5 +69,6 @@ The authoritative rules are in `AGENTS.md#non-negotiables`, `docs/architecture.m
 
 - Semantic elements first; `button` for actions, `Link` for navigation.
 - Every interactive element is keyboard reachable with visible focus.
-- Respect `prefers-reduced-motion` and the in-app setting.
+- Respect `prefers-reduced-motion` and the in-app setting, except the reduce-motion switch's 150ms
+  thumb feedback, which remains as the control's own state feedback.
 - Maintain contrast; decorative effects must not obscure content.

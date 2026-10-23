@@ -51,7 +51,7 @@ flags that are not documented here.
 ## Architecture in three lines
 
 ```text
-src/app       composition root: router, shell, providers, error boundary
+src/app       composition root: router, shell, presentation layout, providers, error boundary
 src/features  screens and feature-owned state (title, play, settings, not-found; play owns the gate)
 src/game      pure domain: RNG, save envelope, player rules
 src/shared    cross-cutting primitives: UI, storage helpers, app constants
@@ -155,10 +155,20 @@ column, review the right column **in the same change**.
 ### Design
 
 - Every screen must be usable with a keyboard, have a visible focus state, and respect
-  `prefers-reduced-motion` and the in-app reduced-motion setting.
+  `prefers-reduced-motion` and the in-app reduced-motion setting. The reduce-motion switch thumb is
+  the sole exception to the global transition disable: its 150ms position change is the control's
+  state feedback, documented in `docs/design-system.md`.
 - The play surface is landscape-only and full-bleed. Do not add a portrait play layout, a header, or
   a HUD to it without a design pass. The title, settings, and presentation pages stay responsive in
-  both orientations.
+  both orientations and use the shared `SiteHeader` rendered once by `PresentationLayout`; `/play`
+  is headerless and outside that layout.
+- Glow intensity is play-only. Only the `glow-player`, `glow-arena`, and `glow-joystick` utilities
+  and the static settings preview may consume `--glow-intensity`; interface chrome keeps fixed
+  `shadow-glow-*` treatments.
+- Clipped surfaces use `clip-border` with `--clip-border` and `--clip-fill`, never `border-*` or
+  `bg-*`. The element background is the border; an inset `::before` paints the fill with `clip-path:
+inherit`. This is the canonical border treatment for buttons, panels, the site header, the title
+  art panel, and the skip link. All button variants need hover, active, and visible focus states.
 - Use semantic HTML first: `button` for actions, `a`/`Link` for navigation, headings in order,
   labels for inputs. Do not put click handlers on plain `div`s.
 - Use the semantic color tokens (`void`, `panel`, `paper`, `ink`, `ink-inverse`, `muted`, `acid`,

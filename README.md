@@ -12,7 +12,7 @@ CSS. Rendered entirely with HTML and CSS — no canvas, no backend.
 
 - React 19 + TypeScript 6 (strict)
 - Vite 8
-- React Router 8 (declarative + `HashRouter`)
+- React Router 8 (declarative + `BrowserRouter`)
 - Tailwind CSS 4 with semantic theme tokens
 - Cyberpunk-inspired yellow/black visual system
 - Anton / Chakra Petch / Rajdhani / JetBrains Mono, bundled locally with Fontsource
@@ -38,7 +38,8 @@ pnpm verify     # check + build
 
 ## What works
 
-- Title, play, settings, and 404 routes.
+- Clean title, play, settings, and 404 routes; a persistent presentation layout owns the shared
+  title header, while the play screen stays headerless and full-bleed.
 - Full-viewport play board with a square player inside a static outlined container, keyboard
   movement, and a touch-anchored joystick. The player is confined to the container.
 - Landscape-only play screen with a rotate gate, plus best-effort fullscreen and orientation lock on
@@ -72,9 +73,10 @@ rfcs/         proposals
 
 ## Offline and hosting
 
-No runtime network calls; fonts are bundled. `base: './'` and hash routing mean `dist/` can be served
-from any static path without rewrite rules. Offline currently means “no network after load”; a PWA is
-not included. Serve the build over HTTP (`pnpm preview`), not `file://`.
+No runtime network calls; fonts are bundled. `base: './'` keeps asset URLs relative. Routes are clean
+paths with `BrowserRouter`; a static host must serve `index.html` for unknown paths. For a subpath
+deployment, set Vite `base` and the router `basename` together. Offline currently means “no network
+after load”; a PWA is not included. Serve the build over HTTP (`pnpm preview`), not `file://`.
 
 ## AI-assisted workflow
 

@@ -3,13 +3,14 @@
 These look like obvious improvements. They are deliberate. Changing one requires a new ADR and a
 doc update.
 
-## 1. Hash URLs (`/#/play`)
+## 1. Clean URLs require a static-host fallback
 
-**Why:** the build is a static SPA that must work from any subpath without a server rewrite. Hash
-routing removes an entire class of deployment bugs. See `decisions/ADR-001-vite-react-spa.md`.
+**Why:** the author requires clean paths (`/play`, not `/#/play`). The app uses `BrowserRouter`;
+Vite dev and preview provide history fallback, but a static host must serve `index.html` for unknown
+paths. Subpath hosting also needs matching Vite `base` and router `basename`. See
+[ADR-010](../decisions/ADR-010-clean-browser-urls.md).
 
-**Do not** switch to `BrowserRouter` “for prettier URLs” without host fallback configuration and an
-ADR.
+**Do not** switch back to `HashRouter` or add hash URLs without an ADR.
 
 ## 2. No canvas, even for effects
 

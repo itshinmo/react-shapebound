@@ -7,7 +7,7 @@
 | UI          | React 19                                                         |
 | Language    | TypeScript 6, strict + `noUncheckedIndexedAccess`                |
 | Build       | Vite 8                                                           |
-| Routing     | React Router 8, declarative mode, `HashRouter`                   |
+| Routing     | React Router 8, declarative mode, `BrowserRouter`                |
 | Styling     | Tailwind CSS 4; Cyberpunk-reference palette/composition          |
 | Type        | Anton (hero), Chakra Petch (UI), Rajdhani (body), JetBrains Mono |
 | State       | Pure game domain + React context for app settings                |
@@ -23,7 +23,7 @@ full gate and update this table.
 ## Layers
 
 ```text
-src/app       composition root: router, shell, providers, error boundary
+src/app       composition root: router, shell, presentation layout, providers, error boundary
 src/features  screens and feature-owned state (title, play, settings, not-found; play owns the gate)
 src/game      pure domain: RNG, save envelope, player rules
 src/shared    cross-cutting primitives: UI, storage helpers, app constants
@@ -45,7 +45,7 @@ it around the router. Features must not import the app root.
 
 ## Routing
 
-`src/app/app.tsx` uses declarative React Router with `HashRouter`:
+`src/app/app.tsx` uses declarative React Router with `BrowserRouter`:
 
 | Path        | Screen           | Purpose                                         |
 | ----------- | ---------------- | ----------------------------------------------- |
@@ -54,32 +54,41 @@ it around the router. Features must not import the app root.
 | `/settings` | `SettingsScreen` | Local preferences and data reset                |
 | `*`         | `NotFoundScreen` | Route fallback                                  |
 
-Hash routing is deliberate (ADR-001). It works from any static subpath without a server rewrite.
-If clean URLs become a requirement, that is an ADR-level change: switch to `BrowserRouter`, configure
-host fallback, and update this doc and the runbook.
+Clean URLs are deliberate ([ADR-010](../decisions/ADR-010-clean-browser-urls.md)). Vite dev and
+preview provide history fallback; a static host must serve `index.html` for unknown paths with a 200
+response. For a subpath deployment, set Vite `base` and `BrowserRouter` `basename` together.
+`base: './'` keeps assets relative, but direct deep links still depend on the host fallback.
 
 `AppShell` renders a skip control, the single `<main id="main-content">`, a scanline overlay, and
 moves focus to main on route changes. The scanline overlay is hidden on `/play` so the play surface
-stays a clean black field. The play feature owns `LandscapeGate`; the title, settings, and not-found
-routes remain responsive in portrait and landscape. Screens render sections, not nested `main`
-elements.
+stays a clean black field. `PresentationLayout` wraps `/`, `/settings`, and `*`; `/play` is a sibling
+route outside it. The layout renders `SiteHeader` once and routes presentation content through
+`<Outlet />`, so the header is not remounted when switching presentation pages. The play feature owns
+`LandscapeGate`; the presentation routes remain responsive in portrait and landscape. `/play` is
+deliberately headerless. Screens render sections, not nested `main` elements.
 
 ## Settings and local state
 
-- `src/features/settings/settings-storage.ts` owns the key, schema version, load/save/clear, and the
-  system reduced-motion query.
-- `src/features/settings/settings-provider.tsx` owns React state, persistence, and the
-  `data-reduced-motion` attribute on `<html>`.
-- `src/features/settings/settings-context.ts` exposes `useSettings`.
+- `src/features/settings/settings-storage.ts` owns the key, schema version, load/save/clear, the
+  system reduced-motion query, glow bounds, and the v1 → v2 settings migration.
+- `src/features/settings/settings-provider.tsx` owns React state, persistence, the
+  `data-reduced-motion` attribute, and the `--glow-intensity` custom property on `<html>`.
+- `src/features/settings/settings-context.ts` exposes `useSettings`, including
+  `setReducedMotion`, `setGlowIntensity`, and `resetLocalData`.
 - Reset removes the save key, clears the settings key, resets to system defaults, and then the
   persistence effect writes the new defaults. It does not remove unrelated browser keys.
+- `--glow-intensity` is consumed only by the play glow utilities and the settings preview. Interface
+  glows continue to use the fixed `shadow-glow-*` tokens; the setting does not alter other pages.
 
 Storage keys:
 
 ```text
-shapebound:settings   { version: 1, reducedMotion: boolean }
+shapebound:settings   { version: 2, reducedMotion: boolean, glowIntensity: 0-100 }
 shapebound:save       { schemaVersion: 1, savedAt: ISO string, data: T }
 ```
+
+A version 1 settings record is migrated on read with `glowIntensity: 100` (the pre-setting default
+look); the persistence effect then rewrites it as version 2.
 
 Browser storage is wrapped by `src/shared/lib/storage.ts`. Reads and writes are guarded because
 storage can be unavailable in private/locked-down contexts. A failed write is reported as `false`,
@@ -105,8 +114,10 @@ never reaches for them.
 
 ### Future save migrations
 
-Schema v1 has no migrations. When v2 exists, add an explicit linear migration from v1 → v2, keep the
-old fixtures as tests, and document the upgrade path here. Never silently reinterpret old data.
+The generic save envelope remains v1 with no migrations. The settings record is separate and is now
+v2; its explicit v1 → v2 migration lives in `settings-storage.ts`. When the save envelope or settings
+schema advances, add an explicit linear migration, keep the old fixtures as tests, and document the
+upgrade path here. Never silently reinterpret old data.
 
 ## Rendering constraints
 
@@ -177,16 +188,17 @@ pnpm verify       # check + production build
 - Domain: pure unit tests for RNG determinism/range, save envelope parsing/versioning, and player
   spawn, movement, bounds, health-to-shield, and damage order.
 - Storage: fake in-memory storage, failure and malformed-JSON cases.
-- UI: component tests for settings persistence and reset confirmation; routing smoke tests for title
-  and not-found; play gate portrait/landscape; play screen without header/HUD and with the touch
-  start overlay; pure joystick vector math.
+- UI: component tests for settings persistence, glow intensity, and reset confirmation; routing
+  smoke tests for title and not-found; play gate portrait/landscape; play screen without header/HUD
+  and with the touch start overlay; pure joystick vector math.
+- Settings storage: v1 → v2 migration, normalization, and malformed-record fallback.
 - No E2E browser suite yet. Add Playwright when there is real gameplay to exercise.
 
 ## Decisions not to “fix”
 
-See `docs/decisions-not-to-fix.md`. In short: hash URLs, no canvas, no state library yet, Tailwind
-instead of CSS Modules, no runtime network, a pure domain, and a landscape-only play surface are
-intentional.
+See `docs/decisions-not-to-fix.md`. In short: clean URLs with a host fallback, no canvas, no state
+library yet, Tailwind instead of CSS Modules, no runtime network, a pure domain, and a
+landscape-only play surface are intentional.
 
 ## Adding a module
 
