@@ -30,7 +30,7 @@ export function AppShell({ children }: AppShellProps) {
           event.preventDefault();
           document.getElementById('main-content')?.focus();
         }}
-        className="fixed top-4 left-4 z-[100] -translate-y-24 border border-acid bg-void px-4 py-2 font-mono text-[0.66rem] tracking-[0.18em] text-acid uppercase transition-transform clip-corner-sm focus:translate-y-0"
+        className="clip-border fixed top-4 left-4 z-[100] -translate-y-24 px-4 py-2 font-mono text-[0.66rem] tracking-[0.18em] text-acid uppercase transition-transform [--clip-border:var(--color-acid)] [--clip-fill:var(--color-void)] clip-corner-sm focus:translate-y-0 focus-visible:outline-none focus-visible:[--clip-border-width:2px] focus-visible:[--clip-border:var(--color-cyan)]"
       >
         Skip to content
       </a>
