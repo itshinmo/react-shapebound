@@ -5,6 +5,7 @@ import type { Settings } from './settings-storage';
 export interface SettingsContextValue {
   readonly settings: Settings;
   readonly setReducedMotion: (value: boolean) => void;
+  readonly setGlowIntensity: (value: number) => void;
   readonly resetLocalData: () => void;
 }
 

@@ -19,7 +19,7 @@ export function TouchJoystick({ state, knobRef }: TouchJoystickProps) {
       />
       <div
         ref={knobRef}
-        className="absolute h-11 w-11 rounded-full border border-cyan bg-cyan shadow-glow-cyan"
+        className="absolute h-11 w-11 rounded-full border border-cyan bg-cyan glow-joystick"
         style={{
           left: state.anchorX,
           top: state.anchorY,
