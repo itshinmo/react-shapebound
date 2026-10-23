@@ -9,12 +9,14 @@ with HTML and CSS — no canvas, no WebGL, no backend.
 The project has a **first playable movement slice**, not a complete game. What exists:
 
 - Four routes: title, play, settings, not-found.
-- A full-viewport, landscape-only play board with a square player, keyboard movement, and a
-  touch-anchored joystick.
+- A full-viewport, landscape-only play board with a square player, a static outlined player
+  container, keyboard movement, and a touch-anchored joystick. The player is confined to the
+  container; the screen is not a collision boundary.
 - A landscape-only play screen with best-effort fullscreen and orientation lock on touch devices.
   Where the browser cannot lock orientation, a blocking rotate overlay is the fallback. The title,
   settings, and not-found pages stay responsive in portrait and landscape.
-- A pure player domain for movement, bounds, health-to-shield conversion, and damage order.
+- A pure player domain for movement, container bounds, health-to-shield conversion, and damage
+  order. The container size is a future skill-tree upgrade.
 - A local settings provider with persisted reduced-motion preference.
 - A pure seeded RNG and a versioned, generic save envelope.
 - A Tailwind v4 design system aligned with the live Cyberpunk 2077 reference: yellow hero, black

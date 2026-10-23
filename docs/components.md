@@ -45,22 +45,25 @@ Settings state is feature-owned:
 
 Play state and integration are feature-owned:
 
-| Module                 | Path                                      | Purpose                                                      |
-| ---------------------- | ----------------------------------------- | ------------------------------------------------------------ |
-| `PlayScreen`           | `src/features/play/play-screen.tsx`       | Play gate, full-bleed board, safe-area playfield             |
-| `LandscapeGate`        | `src/features/play/landscape-gate.tsx`    | Blocks only the play surface in portrait                     |
-| `useLandscape`         | `src/features/play/use-landscape.ts`      | Portrait media-query subscription for the play gate          |
-| `PlayerSquare`         | `src/features/play/player-square.tsx`     | Acid square sized from stats; transform written by the loop  |
-| `TouchJoystick`        | `src/features/play/touch-joystick.tsx`    | Visual base and imperative knob at the touch anchor          |
-| `StartOverlay`         | `src/features/play/start-overlay.tsx`     | Touch-only start, fullscreen, and orientation-lock gesture   |
-| `useKeyboardInput`     | `src/features/play/use-keyboard-input.ts` | WASD/arrows; clears on blur and hidden tab                   |
-| `usePlayerLoop`        | `src/features/play/use-player-loop.ts`    | rAF loop, dt clamp, visual-viewport bounds, transform writes |
-| `useTouchJoystick`     | `src/features/play/use-touch-joystick.ts` | Pointer capture, analog vector, imperative knob, hide        |
-| `getJoystickVector`    | `src/features/play/joystick-vector.ts`    | Pure anchor/point → clamped vector and knob offset           |
-| `requestLandscapeLock` | `src/features/play/orientation-lock.ts`   | Guarded fullscreen + landscape lock and cleanup              |
-| `isTouchDevice`        | `src/features/play/is-touch-device.ts`    | Coarse-pointer / `maxTouchPoints` detection                  |
+| Module                 | Path                                      | Purpose                                                     |
+| ---------------------- | ----------------------------------------- | ----------------------------------------------------------- |
+| `PlayScreen`           | `src/features/play/play-screen.tsx`       | Play gate, full-bleed board, safe-area playfield            |
+| `LandscapeGate`        | `src/features/play/landscape-gate.tsx`    | Blocks only the play surface in portrait                    |
+| `useLandscape`         | `src/features/play/use-landscape.ts`      | Portrait media-query subscription for the play gate         |
+| `PlayerContainer`      | `src/features/play/player-container.tsx`  | Static outline arena; owns the player-bounds element        |
+| `PlayerSquare`         | `src/features/play/player-square.tsx`     | Acid square sized from stats; transform written by the loop |
+| `TouchJoystick`        | `src/features/play/touch-joystick.tsx`    | Visual base and imperative knob at the touch anchor         |
+| `StartOverlay`         | `src/features/play/start-overlay.tsx`     | Touch-only start, fullscreen, and orientation-lock gesture  |
+| `useKeyboardInput`     | `src/features/play/use-keyboard-input.ts` | WASD/arrows; clears on blur and hidden tab                  |
+| `usePlayerLoop`        | `src/features/play/use-player-loop.ts`    | rAF loop, dt clamp, container bounds, transform writes      |
+| `useTouchJoystick`     | `src/features/play/use-touch-joystick.ts` | Pointer capture, analog vector, imperative knob, hide       |
+| `getJoystickVector`    | `src/features/play/joystick-vector.ts`    | Pure anchor/point → clamped vector and knob offset          |
+| `requestLandscapeLock` | `src/features/play/orientation-lock.ts`   | Guarded fullscreen + landscape lock and cleanup             |
+| `isTouchDevice`        | `src/features/play/is-touch-device.ts`    | Coarse-pointer / `maxTouchPoints` detection                 |
 
-The player rules live in `src/game/player.ts`; the play feature imports them and never duplicates them.
+The player rules live in `src/game/player.ts`; the play feature imports them and never duplicates
+them. `PLAYER_CONTAINER_SIZE` is the starting arena size and is intended to become a skill-tree
+upgrade.
 
 ## Rules
 
@@ -86,5 +89,5 @@ The player rules live in `src/game/player.ts`; the play feature imports them and
 - `LandscapeGate` covers portrait blocking and landscape rendering.
 - `PlayScreen` covers the no-header/no-HUD desktop surface, the touch start overlay, and the
   portrait gate integration.
-- `player` covers spawn, movement, bounds, health-to-shield, and damage order.
+- `player` covers spawn, movement, container bounds, health-to-shield, and damage order.
 - `joystick-vector`, RNG, save envelope, and storage helpers have unit tests.

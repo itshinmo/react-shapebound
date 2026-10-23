@@ -12,10 +12,10 @@ game is rendered with HTML and CSS — no canvas, no WebGL, no backend.
   Tailwind CSS 4, and bundled OFL fonts (Anton, Chakra Petch, Rajdhani, JetBrains Mono).
 - Persistence: `localStorage`, versioned save envelope, local settings.
 - Testing: Vitest + Testing Library. Quality gate: ESLint + Prettier + `tsc` + Vitest.
-- Current state: first playable movement slice. `/play` is landscape-only with a square player,
-  keyboard movement, a touch joystick, and a pure player domain; title and settings are responsive.
-  Combat, enemies, points, bosses, the node tree, death, and the HUD are not built. The provisional
-  vision is in `docs/game-design.md`.
+- Current state: first playable movement slice. `/play` is landscape-only with a square player
+  confined to a static outlined container, keyboard movement, a touch joystick, and a pure player
+  domain; title and settings are responsive. Combat, enemies, points, bosses, the node tree, death,
+  and the HUD are not built. The provisional vision is in `docs/game-design.md`.
 
 ## Where knowledge lives
 

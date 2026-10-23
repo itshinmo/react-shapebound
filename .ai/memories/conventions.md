@@ -27,8 +27,8 @@ The authoritative rules are in `AGENTS.md#non-negotiables`, `docs/architecture.m
 - The game domain is not a React concern. Do not import React in `src/game`.
 - Effects own browser integration (timers, storage, DOM attributes); pure rules do not.
 - Real-time gameplay keeps per-frame position in refs and writes transforms directly. The joystick
-  knob is written on `pointermove` too. Do not mirror either in React state. Player bounds intersect
-  the safe playfield with `window.visualViewport`.
+  knob is written on `pointermove` too. Do not mirror either in React state. Player bounds are the
+  static container's inner box; the screen is not a collision boundary.
 
 ## Tailwind
 
@@ -43,8 +43,9 @@ The authoritative rules are in `AGENTS.md#non-negotiables`, `docs/architecture.m
 - `font-hero` (Anton) is only for oversized display; `font-display` for UI headings/buttons;
   `font-body` for copy; `font-mono` for HUD labels.
 - Use `SectionLabel` for `/// MODULE_LABEL` markers. Reference-derived art must remain original.
-- The play surface is landscape-only: black + faint grid, no header/HUD. Title and settings are
-  responsive. Joystick circles are the functional exception to the clipped-surface rule.
+- The play surface is landscape-only: black + faint grid, a static outline container, no header/HUD.
+  Title and settings are responsive. Joystick circles are the functional exception to the
+  clipped-surface rule.
 
 ## Tests
 

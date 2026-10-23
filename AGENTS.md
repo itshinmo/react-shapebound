@@ -20,10 +20,12 @@ is a React + TypeScript single-page app built with Vite and React Router. The ga
 entirely with HTML and CSS — no canvas, no WebGL, no game engine dependency, no backend. It must
 keep working with no network connection after the assets load.
 
-The first playable slice is a landscape-only board with a square player, keyboard/touch movement,
-and a pure player domain (movement, bounds, health/shield). The roguelike loop — survival points,
-bosses, boss currencies, the node tree, combat, death, and the HUD — is not implemented. Do not
-invent those mechanics. Use the `design-a-mechanic` skill before writing the next rules code.
+The first playable slice is a landscape-only board with a square player confined to a static
+outlined container, keyboard/touch movement, and a pure player domain (movement, container bounds,
+health/shield). The container is the collision boundary; the screen is not. The roguelike loop —
+survival points, bosses, boss currencies, the node tree, combat, death, and the HUD — is not
+implemented. Do not invent those mechanics. Use the `design-a-mechanic` skill before writing the
+next rules code.
 
 ## Commands
 

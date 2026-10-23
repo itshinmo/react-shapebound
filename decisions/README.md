@@ -34,4 +34,5 @@ belongs in `docs/`.
 | [ADR-005](ADR-005-tailwind-and-local-fonts.md)               | Tailwind CSS 4, local fonts, cyberpunk-inspired design         | Accepted (refined by ADR-006) | styling / design system         |
 | [ADR-006](ADR-006-cyberpunk-reference-visual-system.md)      | Align the visual system with the live Cyberpunk 2077 reference | Accepted                      | design system / visual identity |
 | [ADR-007](ADR-007-landscape-only-play-surface.md)            | Landscape-only play surface and best-effort orientation lock   | Superseded by ADR-008         | play surface / platform         |
-| [ADR-008](ADR-008-responsive-presentation-landscape-play.md) | Responsive presentation, landscape-only play screen            | Accepted                      | routing / orientation           |
+| [ADR-008](ADR-008-responsive-presentation-landscape-play.md) | Responsive presentation, landscape-only play screen            | Superseded by ADR-009         | routing / orientation           |
+| [ADR-009](ADR-009-static-player-container.md)                | Static outlined player container as the play boundary          | Accepted                      | game domain / play surface      |

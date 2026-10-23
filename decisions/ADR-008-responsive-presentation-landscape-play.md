@@ -1,6 +1,6 @@
 # ADR-008 — Responsive presentation, landscape-only play screen
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-009
 - **Date:** 2026-10-23
 - **Topic:** routing / orientation / presentation
 - **RFC:** —

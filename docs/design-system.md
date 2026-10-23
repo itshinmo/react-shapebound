@@ -137,6 +137,10 @@ black with no header and no HUD.
 
 - **Background:** `bg-void` plus a faint `bg-grid` (`opacity-60`). The global scanline overlay is
   hidden on `/play`; do not add aurora, glitch, or hazard tape to the board.
+- **Player container:** a static, outline-only square centered in the safe playfield
+  (`border-2 border-cyan/60 shadow-glow-cyan`, no fill). It is the player's collision boundary and a
+  key game feature; the player sits inside it. Starting size is 320 px `[unverified]` and is
+  intended to grow through skill-tree upgrades.
 - **Player:** an acid square (`bg-acid`, `shadow-glow-acid`) sized from player stats. Position is
   written as a transform; do not animate its layout properties.
 - **Joystick:** cyan base and knob (`border-cyan/50`, `bg-cyan/10`, `bg-cyan`,
@@ -146,8 +150,8 @@ black with no header and no HUD.
   start overlay uses the `Button` primitive; the acid button needs a cyan focus outline so the focus
   ring remains visible on black.
 - **Safe areas:** the board background is full-bleed; the playfield is inset with
-  `env(safe-area-inset-*)` so the player stays clear of notches. The app shell also insets in-flow
-  screens from the side cutouts; the play surface is the full-bleed exception.
+  `env(safe-area-inset-*)` so the container is centered in the safe area. The app shell also insets
+  in-flow screens from the side cutouts; the play surface is the full-bleed exception.
 - **No visible HUD** in this slice: no health/shield display, visible control hints, timer, points,
   pause, or exit control. A future HUD needs a design pass.
 
@@ -183,8 +187,8 @@ black with no header and no HUD.
 - **Keyboard:** every action reachable; the settings switch is a real checkbox; skip control focuses
   `<main>` without changing the hash route.
 - **Play surface:** the board is a region with a visually hidden `h1` and movement instructions. The
-  rotate overlay is a `role="status"` live region. The player and joystick are `aria-hidden` visual
-  representations; the domain state is the source of truth.
+  rotate overlay is a `role="status"` live region. The player, container outline, and joystick are
+  `aria-hidden` visual representations; the domain state is the source of truth.
 - **Play start:** the touch start overlay uses a real `button`. On the acid button, use a cyan focus
   outline so the ring remains visible against black.
 - **Reduced motion:** system preference and in-app setting both disable drift/flicker/transitions.

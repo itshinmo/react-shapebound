@@ -64,7 +64,7 @@ strategy.
 **Why:** the first delivered mechanic is movement on a landscape-only board. The domain has the
 player stats and health/shield model, but combat, enemies, points, the skill tree, the HUD, and death
 are not implemented. Presenting them as if they exist would misrepresent the product. See
-`docs/game-design.md` and [ADR-008](../decisions/ADR-008-responsive-presentation-landscape-play.md).
+`docs/game-design.md` and [ADR-009](../decisions/ADR-009-static-player-container.md).
 
 **Do not** add temporary combat, economy, or a HUD to “fill out” the board. Design the next mechanic
 with `design-a-mechanic` first.

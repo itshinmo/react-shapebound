@@ -5,8 +5,8 @@ CSS. Rendered entirely with HTML and CSS — no canvas, no backend.
 
 > **Status: first playable movement slice.** Routing, settings persistence, a pure RNG, a versioned
 > save envelope, a pure player domain, and the design system are in place. The play screen is a
-> landscape-only board with a square player and keyboard/touch movement. Combat, bosses, points, the
-> skill tree, and the HUD are not built.
+> landscape-only board with a square player confined to a static outlined container, plus
+> keyboard/touch movement. Combat, bosses, points, the skill tree, and the HUD are not built.
 
 ## Stack
 
@@ -39,10 +39,12 @@ pnpm verify     # check + build
 ## What works
 
 - Title, play, settings, and 404 routes.
-- Full-viewport play board with a square player, keyboard movement, and a touch-anchored joystick.
+- Full-viewport play board with a square player inside a static outlined container, keyboard
+  movement, and a touch-anchored joystick. The player is confined to the container.
 - Landscape-only play screen with a rotate gate, plus best-effort fullscreen and orientation lock on
   touch devices. Title and settings pages stay responsive in both orientations.
-- Pure player domain: movement, bounds, health-to-shield conversion, and damage order, with tests.
+- Pure player domain: movement, container bounds, health-to-shield conversion, and damage order,
+  with tests. The container size is a future skill-tree upgrade.
 - Reduced-motion setting persisted locally, with a two-step local-data reset.
 - Pure seeded RNG and a versioned save envelope with tests.
 - Cyberpunk-inspired design system with a responsive shell.

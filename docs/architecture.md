@@ -93,10 +93,11 @@ The first domain state is the player. The domain currently provides:
   `[0, 1)`, `nextInt(n)` returns an integer in `[0, n)`, `getState()` exposes the cursor for saves.
 - `src/game/save.ts` — generic `SaveEnvelope<T>`, `createSave`, `serializeSave`, `parseSave`, and
   typed parse failures (`invalid-json`, `invalid-envelope`, `unsupported-version`, `invalid-data`).
-- `src/game/player.ts` — `PlayerStats`, `PlayerState`, `PLAYER_BASE_STATS`, `createPlayer`,
-  `clampPlayerToBounds`, `stepPlayer`, and `applyDamage`. Movement is normalized, clamped to bounds,
-  and takes an injected `dtSeconds`. `maxHealth` above 1 becomes shield; damage consumes shield
-  before the single health point. There is no randomness and no damage source yet.
+- `src/game/player.ts` — `PlayerStats`, `PlayerState`, `PLAYER_BASE_STATS`,
+  `PLAYER_CONTAINER_SIZE`, `createPlayer`, `clampPlayerToBounds`, `stepPlayer`, and `applyDamage`.
+  Movement is normalized, clamped to the container bounds, and takes an injected `dtSeconds`.
+  `maxHealth` above 1 becomes shield; damage consumes shield before the single health point. There is
+  no randomness and no damage source yet.
 
 The next rules spec defines the next state and transitions. Implement them as pure functions/reducer
 actions in `src/game`, with tests. Time, randomness, and persistence are inputs or ports; the domain
@@ -131,7 +132,7 @@ old fixtures as tests, and document the upgrade path here. Never silently reinte
 - **Touch start.** On touch devices, `/play` shows a one-tap start overlay. The tap requests
   fullscreen on the play surface and attempts `screen.orientation.lock('landscape')`. Both are
   feature-detected and caught; failure does not block the game. Desktop starts immediately. See
-  [ADR-008](../decisions/ADR-008-responsive-presentation-landscape-play.md).
+  [ADR-009](../decisions/ADR-009-static-player-container.md).
 - **Fallback.** iOS/Safari and most desktop browsers do not support the lock. The rotate overlay is
   the only enforcement there. No PWA, manifest, service worker, or native wrapper is used for
   orientation.
@@ -142,11 +143,13 @@ old fixtures as tests, and document the upgrade path here. Never silently reinte
   on release or cancel. Mouse pointers and secondary touches are ignored. The joystick is a visual
   indicator, not a separate control. The player vector and the knob transform are written directly
   from `pointermove`; React state changes only when the joystick appears or disappears.
-- **Bounds.** The safe playfield is intersected with `window.visualViewport` and expressed as
-  `{ left, top, width, height }`. This keeps the player inside the visible screen when a mobile
-  browser's layout viewport is larger than the displayed fullscreen viewport.
-- **Play surface.** Full-bleed black with a faint `bg-grid`, no header, and no HUD. The grid is
-  decorative and `aria-hidden`. A safe-area-inset playfield keeps the player out of notches.
+- **Player container.** A static, outline-only square is centered in the safe playfield. The player
+  is rendered inside its inner content and clamped to that box; the screen is not a collision
+  boundary. `PLAYER_CONTAINER_SIZE` starts at 320 px `[unverified]` and is intended to grow through
+  skill-tree upgrades. The loop re-measures when the size changes.
+- **Play surface.** Full-bleed black with a faint `bg-grid`, no header, and no HUD. The grid and
+  container outline are decorative and `aria-hidden`. A safe-area-inset playfield centers the
+  container.
 - **State.** Player position lives in memory and is not saved. The HUD, pause, and a visible exit
   control are deferred; browser back is the exit path in this slice.
 
