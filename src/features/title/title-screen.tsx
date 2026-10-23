@@ -11,12 +11,12 @@ const systemRows = [
   { label: 'RENDER', value: 'DOM / CSS' },
   { label: 'NETWORK', value: 'OFFLINE' },
   { label: 'SAVE', value: 'LOCAL' },
-  { label: 'STATUS', value: 'SCAFFOLD' },
+  { label: 'STATUS', value: 'PROTOTYPE' },
 ] as const;
 
 export function TitleScreen() {
   return (
-    <div className="relative flex min-h-svh flex-col overflow-hidden bg-paper text-ink-inverse">
+    <div className="relative flex min-h-svh flex-col overflow-x-clip bg-paper text-ink-inverse">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-halftone opacity-30"
@@ -55,25 +55,30 @@ export function TitleScreen() {
               <span className="h-1.5 w-1.5 animate-pulse-line bg-acid" />
               LOCAL LINK
             </span>
-            <LinkButton to="/play" className="hidden px-4 py-2 text-[0.62rem] sm:inline-flex">
-              INITIALIZE <span aria-hidden="true">→</span>
-            </LinkButton>
+            <div className="hidden sm:inline-flex">
+              <LinkButton to="/play" className="px-4 py-2 text-[0.62rem]">
+                INITIALIZE <span aria-hidden="true">→</span>
+              </LinkButton>
+            </div>
           </div>
         </header>
 
         <div className="grid items-start gap-8 py-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)] lg:py-10">
           <section aria-labelledby="title-heading" className="relative z-10 pt-2">
             <div className="flex flex-wrap items-center gap-3 font-mono text-[0.6rem] tracking-[0.22em] uppercase">
-              <span className="h-2 w-2 bg-red" />
-              <span className="text-red">SCAFFOLD BUILD</span>
-              <span aria-hidden="true" className="h-px min-w-8 flex-1 bg-ink-inverse/30" />
-              <span className="text-ink-inverse/60">MECHANICS PENDING</span>
+              <span className="h-2 w-2 bg-ink-inverse" />
+              <span className="text-ink-inverse">PROTOTYPE BUILD</span>
+              <span
+                aria-hidden="true"
+                className="hidden h-px min-w-8 flex-1 bg-ink-inverse/30 sm:block"
+              />
+              <span className="text-ink-inverse/60">MOVEMENT SLICE</span>
             </div>
 
             <h1
               id="title-heading"
               aria-label={APP_TITLE}
-              className="mt-5 font-hero text-[clamp(5rem,15vw,12rem)] leading-[0.8] tracking-[-0.02em] uppercase"
+              className="mt-5 font-hero text-[clamp(3.5rem,15vw,12rem)] leading-[0.8] tracking-[-0.02em] uppercase"
             >
               <span aria-hidden="true" className="block text-glitch">
                 SHAPE
@@ -148,11 +153,11 @@ export function TitleScreen() {
 
                 <div className="mt-3 border border-cyan/40 bg-cyan/5 p-3">
                   <p className="font-mono text-[0.55rem] tracking-[0.2em] text-cyan uppercase">
-                    NEXT MODULE
+                    CURRENT SLICE
                   </p>
                   <p className="mt-1 font-body text-sm leading-snug text-ink/80">
-                    Game rules are not defined yet. The shell, routing, saves, and design system are
-                    ready.
+                    The play screen has a movable square on a landscape-only board. Combat, bosses,
+                    points, and the skill tree are not built.
                   </p>
                 </div>
               </div>
@@ -184,18 +189,19 @@ export function TitleScreen() {
               </span>
             </article>
 
-            <article className="border border-red/60 bg-panel p-4">
-              <p className="font-mono text-[0.58rem] tracking-[0.2em] text-red uppercase">
-                MODULE_02 // MECHANIC
+            <article className="border border-acid/50 bg-panel p-4">
+              <p className="font-mono text-[0.58rem] tracking-[0.2em] text-acid uppercase">
+                MODULE_02 // MOVEMENT
               </p>
               <h2 className="mt-2 font-display text-2xl font-bold tracking-[0.02em] uppercase">
-                NOT INSTALLED
+                PLAYABLE SLICE
               </h2>
               <p className="mt-2 font-body text-sm leading-snug text-muted">
-                Game rules are not designed yet. The play screen is a labelled scaffold, not a game.
+                The play board has a movable square, keyboard input, and a touch joystick. Combat,
+                bosses, and progression are not built.
               </p>
-              <span className="mt-4 inline-block border border-red px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-red uppercase">
-                PENDING
+              <span className="mt-4 inline-block border border-acid px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-acid uppercase">
+                SLICE 01
               </span>
             </article>
           </div>

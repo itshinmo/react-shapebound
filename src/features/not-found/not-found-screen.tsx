@@ -3,7 +3,7 @@ import { SectionLabel } from '@/shared/ui/section-label';
 
 export function NotFoundScreen() {
   return (
-    <div className="relative flex min-h-svh flex-col overflow-hidden bg-paper px-4 py-6 text-ink-inverse sm:px-6">
+    <div className="relative flex min-h-svh flex-col overflow-x-clip bg-paper px-4 py-6 text-ink-inverse sm:px-6">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-halftone opacity-30"

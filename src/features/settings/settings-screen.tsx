@@ -22,7 +22,7 @@ export function SettingsScreen() {
   };
 
   return (
-    <div className="relative flex min-h-svh flex-col overflow-hidden bg-void">
+    <div className="relative flex min-h-svh flex-col overflow-x-clip bg-void">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-aurora" />
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-grid opacity-40" />
 
