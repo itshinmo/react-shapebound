@@ -10,6 +10,7 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const { pathname } = useLocation();
   const firstRender = useRef(true);
+  const isPlay = pathname === '/play';
 
   useEffect(() => {
     if (firstRender.current) {
@@ -22,7 +23,7 @@ export function AppShell({ children }: AppShellProps) {
   }, [pathname]);
 
   return (
-    <div className="relative min-h-svh overflow-x-clip bg-void">
+    <div className="relative min-h-svh overflow-x-clip bg-void pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]">
       <a
         href="#main-content"
         onClick={(event) => {
@@ -34,10 +35,12 @@ export function AppShell({ children }: AppShellProps) {
         Skip to content
       </a>
 
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 z-50 bg-scanlines opacity-[0.04]"
-      />
+      {isPlay ? null : (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-50 bg-scanlines opacity-[0.04]"
+        />
+      )}
 
       <main id="main-content" tabIndex={-1} className="relative z-10 min-h-svh outline-none">
         {children}
