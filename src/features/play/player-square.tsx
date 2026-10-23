@@ -10,7 +10,7 @@ export function PlayerSquare({ playerRef, size }: PlayerSquareProps) {
     <div
       ref={playerRef}
       aria-hidden="true"
-      className="pointer-events-none absolute top-0 left-0 bg-acid shadow-glow-acid will-change-transform"
+      className="pointer-events-none absolute top-0 left-0 bg-acid glow-player will-change-transform"
       style={{ width: size, height: size }}
     />
   );

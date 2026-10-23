@@ -9,6 +9,7 @@ import {
   getDefaultSettings,
   getSystemReducedMotion,
   loadSettings,
+  normalizeGlowIntensity,
   saveSettings,
 } from './settings-storage';
 
@@ -34,8 +35,24 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     document.documentElement.dataset['reducedMotion'] = String(settings.reducedMotion);
   }, [settings.reducedMotion]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--glow-intensity', String(settings.glowIntensity));
+
+    return () => {
+      root.style.removeProperty('--glow-intensity');
+    };
+  }, [settings.glowIntensity]);
+
   const setReducedMotion = useCallback((value: boolean) => {
-    setSettings({ reducedMotion: value });
+    setSettings((current) => ({ ...current, reducedMotion: value }));
+  }, []);
+
+  const setGlowIntensity = useCallback((value: number) => {
+    setSettings((current) => ({
+      ...current,
+      glowIntensity: normalizeGlowIntensity(value),
+    }));
   }, []);
 
   const resetLocalData = useCallback(() => {
@@ -45,8 +62,8 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   }, [storage]);
 
   const value = useMemo<SettingsContextValue>(
-    () => ({ settings, setReducedMotion, resetLocalData }),
-    [settings, setReducedMotion, resetLocalData],
+    () => ({ settings, setReducedMotion, setGlowIntensity, resetLocalData }),
+    [settings, setReducedMotion, setGlowIntensity, resetLocalData],
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

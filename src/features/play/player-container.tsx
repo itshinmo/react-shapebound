@@ -10,7 +10,7 @@ export function PlayerContainer({ arenaRef, size, children }: PlayerContainerPro
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 border-cyan/60 shadow-glow-cyan"
+      className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 border-cyan/60 glow-arena"
       style={{ width: size, height: size }}
     >
       <div ref={arenaRef} className="relative h-full w-full">
