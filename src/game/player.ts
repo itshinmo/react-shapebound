@@ -32,6 +32,8 @@ export const PLAYER_BASE_STATS: PlayerStats = {
   maxHealth: 1,
 };
 
+export const PLAYER_CONTAINER_SIZE = 320;
+
 export function createPlayer(stats: PlayerStats, bounds: Bounds): PlayerState {
   const shield = Math.max(0, Math.floor(stats.maxHealth) - 1);
 

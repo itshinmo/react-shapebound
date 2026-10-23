@@ -9,92 +9,51 @@ import type { RefObject } from 'react';
 const MAX_FRAME_SECONDS = 0.05;
 
 interface UsePlayerLoopOptions {
-  readonly playfieldRef: RefObject<HTMLDivElement | null>;
+  readonly arenaRef: RefObject<HTMLDivElement | null>;
   readonly playerRef: RefObject<HTMLDivElement | null>;
   readonly keyboardInputRef: RefObject<MovementInput>;
   readonly joystickStateRef: RefObject<JoystickState | null>;
   readonly joystickInputRef: RefObject<MovementInput>;
   readonly running: boolean;
   readonly stats: PlayerStats;
+  readonly containerSize: number;
 }
 
 export function usePlayerLoop({
-  playfieldRef,
+  arenaRef,
   playerRef,
   keyboardInputRef,
   joystickStateRef,
   joystickInputRef,
   running,
   stats,
+  containerSize,
 }: UsePlayerLoopOptions): void {
   const playerStateRef = useRef<PlayerState | null>(null);
   const boundsRef = useRef<Bounds>({ left: 0, top: 0, width: 0, height: 0 });
 
   useLayoutEffect(() => {
-    const playfield = playfieldRef.current;
+    const arena = arenaRef.current;
 
-    if (playfield === null) {
+    if (arena === null) {
       return;
     }
 
-    const measure = () => {
-      const rect = playfield.getBoundingClientRect();
-      const viewport = window.visualViewport ?? null;
-      const left = viewport === null ? 0 : Math.max(0, viewport.offsetLeft - rect.left);
-      const top = viewport === null ? 0 : Math.max(0, viewport.offsetTop - rect.top);
-      const viewportRight =
-        viewport === null
-          ? Number.POSITIVE_INFINITY
-          : viewport.offsetLeft + viewport.width - rect.left;
-      const viewportBottom =
-        viewport === null
-          ? Number.POSITIVE_INFINITY
-          : viewport.offsetTop + viewport.height - rect.top;
-      const documentWidth = document.documentElement.clientWidth;
-      const documentHeight = document.documentElement.clientHeight;
-      const right = Math.min(
-        rect.width,
-        documentWidth > 0 ? documentWidth - rect.left : Number.POSITIVE_INFINITY,
-        viewportRight,
-      );
-      const bottom = Math.min(
-        rect.height,
-        documentHeight > 0 ? documentHeight - rect.top : Number.POSITIVE_INFINITY,
-        viewportBottom,
-      );
-      const bounds: Bounds = {
-        left,
-        top,
-        width: Math.max(0, right - left),
-        height: Math.max(0, bottom - top),
-      };
-
-      boundsRef.current = bounds;
-      const current = playerStateRef.current;
-      const next =
-        current === null ? createPlayer(stats, bounds) : clampPlayerToBounds(current, bounds);
-
-      playerStateRef.current = next;
-      writePlayerTransform(playerRef.current, next);
+    const rect = arena.getBoundingClientRect();
+    const bounds: Bounds = {
+      left: 0,
+      top: 0,
+      width: Math.min(rect.width, containerSize),
+      height: Math.min(rect.height, containerSize),
     };
+    const current = playerStateRef.current;
+    const next =
+      current === null ? createPlayer(stats, bounds) : clampPlayerToBounds(current, bounds);
 
-    measure();
-    window.addEventListener('resize', measure);
-    window.addEventListener('orientationchange', measure);
-    document.addEventListener('fullscreenchange', measure);
-
-    const viewport = window.visualViewport ?? null;
-    viewport?.addEventListener('resize', measure);
-    viewport?.addEventListener('scroll', measure);
-
-    return () => {
-      window.removeEventListener('resize', measure);
-      window.removeEventListener('orientationchange', measure);
-      document.removeEventListener('fullscreenchange', measure);
-      viewport?.removeEventListener('resize', measure);
-      viewport?.removeEventListener('scroll', measure);
-    };
-  }, [playfieldRef, playerRef, stats]);
+    boundsRef.current = bounds;
+    playerStateRef.current = next;
+    writePlayerTransform(playerRef.current, next);
+  }, [arenaRef, containerSize, playerRef, stats]);
 
   useEffect(() => {
     if (!running) {
