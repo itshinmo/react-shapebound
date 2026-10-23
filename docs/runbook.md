@@ -93,6 +93,32 @@ into `dist/assets`. Do not replace them with a Google Fonts URL — that breaks 
 **Storage is unavailable.** Private/locked-down contexts can throw on access. The app falls back to
 defaults and skips persistence; this is expected, not a crash.
 
+**A rotate-to-landscape screen blocks the game.** This is intentional on `/play`. The title,
+settings, and not-found pages are responsive and do not require landscape. Rotate the device or widen
+the window; the play surface remounts when landscape returns.
+
+**Fullscreen or orientation lock does not happen.** On touch devices, `/play` shows a start overlay;
+the tap is the required user gesture for fullscreen and `screen.orientation.lock('landscape')`.
+Android Chrome supports both; iOS/Safari and most desktop browsers cannot lock orientation. Failure is
+non-blocking and the rotate overlay is the fallback. There is no PWA or manifest orientation policy.
+
+**The joystick does not appear.** It is touch/pen only, and only after the run starts. A mouse click
+does not create one; a second simultaneous touch is ignored. Releasing or cancelling the pointer
+hides it and zeroes movement. It also clears on window blur or a hidden tab.
+
+**The player resets after rotating to portrait.** The play gate replaces the play surface, so it
+unmounts. This slice has no saved run state; the player respawns centered. Revisit the gate when run
+state becomes persistent.
+
+**The player can leave the visible screen in fullscreen.** The playfield is intersected with
+`window.visualViewport`, which corrects the mobile Firefox layout-viewport/cutout mismatch. If a
+device still allows the player over the visible edge, record the browser, version, and device; the
+viewport intersection may need another platform-specific rule.
+
+**Testing landscape on desktop.** Use DevTools device emulation or resize the window. On `/play`, a
+portrait viewport should show the blocking overlay; the title and settings should stay usable in both
+orientations. There is no E2E suite yet.
+
 **Windows symlink adapters.** `.claude`, `.opencode`, and `.agents` point into `.ai/`. Enable
 `core.symlinks` (`git config --global core.symlinks true`) or replace each symlink with a one-line
 pointer file. Do not copy the contents.
@@ -126,4 +152,5 @@ pointer file. Do not copy the contents.
 - E2E browser tests.
 - Audio.
 - Save-slot UI.
-- Gameplay rules and content.
+- HUD, pause, and a visible exit control.
+- Combat, enemies, bosses, points, the skill tree, and run/death progression.

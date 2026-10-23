@@ -1,8 +1,9 @@
 # Game design
 
-> **Status: not designed yet.** This is a skeleton for the author and the `design-a-mechanic`
-> pipeline. Do not fill it with invented mechanics. Replace the `TODO` markers when the game is
-> described.
+> **Status: provisional vision, first movement slice implemented.** The author supplied the direction
+> below on 2026-10-23. It is intentionally incomplete and may change. The movement slice, landscape
+> gate, and player stat/health-shield model are implemented; combat, economy, the boss loop, and the
+> node tree are not. Unimplemented or unanswered mechanics remain `TODO` or open questions.
 
 ## Design pillars
 
@@ -12,17 +13,50 @@ _What should every mechanic reinforce? Three to five short principles._
 - <!-- TODO: pillar 2 -->
 - <!-- TODO: pillar 3 -->
 
+## Vision (provisional)
+
+Shapebound is a single-player, offline **roguelike survival** game built from DOM elements and CSS.
+The player survives a run, earns points, dies, and spends those points on a node tree that makes the
+next run stronger.
+
+- **Blue points** are the default currency. The player earns **1 blue point per second alive**.
+- **Boss currencies** come in three colors: **purple**, **green**, and **orange**. There are three
+  bosses in the same colors; each drops its matching currency when defeated. The palette has orange;
+  purple and green are not semantic tokens yet. Add them with a design note when the currency UI
+  lands.
+- The player spends blue points to unlock and upgrade nodes. Some paths are locked behind a boss
+  currency, so advancing the tree requires defeating the matching boss.
+- At the start, without upgrades, the player is **slow, big, and has 1 health point**. Upgrading can
+  make the player faster, smaller, and tougher.
+- **Health above 1 becomes shield.** While alive, the player always has exactly 1 health point; any
+  additional health from upgrades is shield. Damage is expected to consume shield before health.
+  There is no damage source yet.
+- For now, the player has no advanced combat mechanics. They move to dodge enemies and attacks.
+- Input: keyboard (WASD and arrow keys) on desktop; a touch-anchored joystick on mobile.
+- Screen: the play board fills the screen and is **landscape-only**. Portrait is not supported for
+  the game. The title, settings, and other presentation pages are responsive in both orientations.
+
 ## Core loop
 
-_What does the player do moment to moment, and why does it repeat?_
+1. Start a run.
+2. Survive; blue points accrue at 1 per second alive.
+3. Defeat color-coded bosses for their currencies.
+4. Die (the exact death or win condition is still open).
+5. Spend points in the node tree.
+6. Start the next run stronger.
 
-<!-- TODO -->
+<!-- TODO: define how a run starts and ends, how bosses appear, and how the player defeats them. -->
 
 ## Mechanics
 
-| Mechanic   | Status | Spec | Docs |
-| ---------- | ------ | ---- | ---- |
-| _None yet_ | —      | —    | —    |
+| Mechanic                                    | Status                      | Spec                                             | Docs                                                                      |
+| ------------------------------------------- | --------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
+| Player movement (keyboard + touch joystick) | Implemented; first slice    | `.ai/specs/mechanics/player-movement.md` (local) | [Architecture](architecture.md#game-domain)                               |
+| Landscape-only play surface                 | Implemented                 | Same local spec                                  | [ADR-008](../decisions/ADR-008-responsive-presentation-landscape-play.md) |
+| Survival scoring (blue points)              | Planned                     | —                                                | —                                                                         |
+| Bosses and boss currencies                  | Planned; defeat method open | —                                                | —                                                                         |
+| Node tree / meta progression                | Planned                     | —                                                | —                                                                         |
+| HUD                                         | Deferred                    | —                                                | —                                                                         |
 
 When a mechanic lands:
 
@@ -33,10 +67,15 @@ When a mechanic lands:
 
 ## Content model
 
-_Levels, puzzles, runs, cards, maps, or whatever the game is made of. Include the data shape and how
-content is authored/validated._
+_Provisional._ Content is expected to be organized as:
 
-<!-- TODO -->
+- **Run** — one survival attempt, from start to death or another end condition.
+- **Currency** — blue (survival) and purple/green/orange (boss drops).
+- **Boss** — one color-coded encounter per boss currency.
+- **Node tree** — unlockable and upgradeable nodes, some gated by boss currency.
+- **Player stats** — movement speed, size, and health; health above 1 becomes shield.
+
+<!-- TODO: define the data shape, content authoring, validation, and save format. -->
 
 ## Balance philosophy
 
@@ -44,20 +83,35 @@ content is authored/validated._
 - Prefer a small number of legible values over a spreadsheet of hidden modifiers.
 - Every random outcome must be reproducible from the saved seed and draw order.
 - Balance changes need a playtest hypothesis, not just a feeling.
+- The first movement slice uses provisional values: 64 px square, 180 px/s, 1 HP and 0 shield
+  `[unverified]`.
 
 ## Input and accessibility
 
-- The DOM-only constraint is architectural (ADR-002); design mechanics that read well as elements,
-  text, grids, and CSS transitions.
-- Every action must have a keyboard path. No drag-only or hover-only mechanics.
-- Reduced motion must not remove information.
-- Do not rely on color alone to distinguish shapes, states, or players.
+- **Landscape play, responsive presentation.** The title, settings, and not-found pages respond to
+  portrait and landscape. Only `/play` is landscape-gated. On touch devices, `/play` requests
+  fullscreen and a best-effort orientation lock on the start tap; where the browser cannot lock
+  (notably iOS/Safari), a blocking rotate overlay is the fallback.
+- **Keyboard:** WASD and arrow keys move the player; diagonal speed is not faster.
+- **Touch:** a joystick appears at the touch point, follows the finger, and disappears on release.
+  It is a visual indicator, not a separate control.
+- **No HUD in the first slice.** Health and shield are modeled in the domain but not displayed yet.
+- **DOM-only.** No canvas or WebGL. Motion uses transforms; the player is clamped to the safe
+  playfield.
+- **Reduced motion:** decorative animation is disabled; essential gameplay movement remains.
+- **Color is not the only signal.** Future HUD and status UI must include text or shape, not color
+  alone.
 
 ## Open questions for the author
 
-- What is the core loop?
-- Is the game turn-based, real-time, or puzzle-like?
-- What is the win/lose condition, if any?
-- Is there randomness? If not, do we still need the seeded RNG for tests?
-- What is the smallest playable slice we can build first?
-- What should the player see on the board, and how large is it?
+- **Boss defeat:** How are bosses defeated if the player can only move to dodge and has no attack?
+- **Run end:** Is a run endless until death, or is there a win condition?
+- **Boss cadence:** When do the three bosses appear, and what do they do?
+- **Skill tree:** What is the node layout, cost curve, upgrade step, and cap for speed, size, and
+  health?
+- **Shield:** Does shield regenerate or heal? What restores health?
+- **Currency persistence:** What happens to unspent points on death? Are all points meta-currency?
+- **Board:** Is the arena always one fixed screen, or can it scroll or resize with difficulty?
+- **Enemies:** Are there regular enemies in addition to bosses? How do they attack?
+- **HUD and exit:** What should the HUD show, and how should the player pause or leave a run?
+- **Upgrades:** How do the speed, size, and health upgrades interact with shield conversion?
