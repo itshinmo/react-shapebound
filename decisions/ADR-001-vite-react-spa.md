@@ -1,6 +1,6 @@
 # ADR-001 — Vite + React SPA with hash routing
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-010
 - **Date:** 2026-10-21
 - **Topic:** app architecture
 - **RFC:** —

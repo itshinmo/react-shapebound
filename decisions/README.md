@@ -27,7 +27,7 @@ belongs in `docs/`.
 
 | ADR                                                          | Title                                                          | Status                        | Topic                           |
 | ------------------------------------------------------------ | -------------------------------------------------------------- | ----------------------------- | ------------------------------- |
-| [ADR-001](ADR-001-vite-react-spa.md)                         | Vite + React SPA with hash routing                             | Accepted                      | app architecture                |
+| [ADR-001](ADR-001-vite-react-spa.md)                         | Vite + React SPA with hash routing                             | Superseded by ADR-010         | app architecture                |
 | [ADR-002](ADR-002-dom-only-rendering.md)                     | DOM-only rendering, no canvas                                  | Accepted                      | rendering                       |
 | [ADR-003](ADR-003-pure-game-domain.md)                       | Pure game domain, seeded RNG, versioned local saves            | Accepted                      | game domain / persistence       |
 | [ADR-004](ADR-004-agent-agnostic-knowledge-layer.md)         | Agent-agnostic knowledge layer and guardrails                  | Accepted                      | process / AI tooling            |
@@ -36,3 +36,4 @@ belongs in `docs/`.
 | [ADR-007](ADR-007-landscape-only-play-surface.md)            | Landscape-only play surface and best-effort orientation lock   | Superseded by ADR-008         | play surface / platform         |
 | [ADR-008](ADR-008-responsive-presentation-landscape-play.md) | Responsive presentation, landscape-only play screen            | Superseded by ADR-009         | routing / orientation           |
 | [ADR-009](ADR-009-static-player-container.md)                | Static outlined player container as the play boundary          | Accepted                      | game domain / play surface      |
+| [ADR-010](ADR-010-clean-browser-urls.md)                     | Clean browser URLs with a static-host fallback                 | Accepted                      | routing / static hosting        |
