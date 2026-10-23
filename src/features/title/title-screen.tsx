@@ -1,11 +1,10 @@
-import { Link } from 'react-router';
-
 import { APP_TAGLINE, APP_TITLE, APP_VERSION } from '@/shared/config/app-config';
 import { LinkButton } from '@/shared/ui/button';
 import { SectionLabel } from '@/shared/ui/section-label';
-import { ShapeMark } from '@/shared/ui/shape-mark';
 
 import { HeroArt } from './hero-art';
+
+const buildDetails = [`BUILD ${APP_VERSION}`, 'BROWSER ROUTER', 'NO CANVAS', 'OFFLINE'] as const;
 
 const systemRows = [
   { label: 'RENDER', value: 'DOM / CSS' },
@@ -16,53 +15,8 @@ const systemRows = [
 
 export function TitleScreen() {
   return (
-    <div className="relative flex min-h-svh flex-col overflow-x-clip bg-paper text-ink-inverse">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-halftone opacity-30"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 animate-drift bg-grid-ink opacity-30"
-      />
-
-      <div className="relative mx-auto flex w-full max-w-[1500px] flex-1 flex-col px-4 py-4 sm:px-6 lg:px-10">
-        <header className="flex items-center justify-between gap-4 border border-acid bg-void px-4 py-3 text-ink clip-nav sm:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <ShapeMark className="h-8 w-8 shrink-0 text-acid" />
-            <div className="min-w-0">
-              <p className="truncate font-mono text-[0.55rem] tracking-[0.3em] text-muted uppercase">
-                SHAPEBOUND // SYSTEM
-              </p>
-              <p className="truncate font-display text-sm font-semibold tracking-[0.18em] text-ink uppercase">
-                LOCAL INTERFACE
-              </p>
-            </div>
-          </div>
-
-          <nav className="hidden items-center gap-5 font-mono text-[0.6rem] tracking-[0.2em] text-muted uppercase md:flex">
-            <span className="text-acid">01 // TITLE</span>
-            <Link to="/play" className="transition-colors hover:text-cyan">
-              02 // PLAY
-            </Link>
-            <Link to="/settings" className="transition-colors hover:text-cyan">
-              03 // CONFIG
-            </Link>
-          </nav>
-
-          <div className="flex shrink-0 items-center gap-3">
-            <span className="hidden items-center gap-2 font-mono text-[0.55rem] tracking-[0.2em] text-muted uppercase sm:flex">
-              <span className="h-1.5 w-1.5 animate-pulse-line bg-acid" />
-              LOCAL LINK
-            </span>
-            <div className="hidden sm:inline-flex">
-              <LinkButton to="/play" className="px-4 py-2 text-[0.62rem]">
-                INITIALIZE <span aria-hidden="true">→</span>
-              </LinkButton>
-            </div>
-          </div>
-        </header>
-
+    <div className="relative flex flex-1 flex-col overflow-x-clip">
+      <div className="relative mx-auto flex w-full max-w-[1500px] flex-1 flex-col px-4 pb-4 sm:px-6 lg:px-10">
         <div className="grid items-start gap-8 py-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)] lg:py-10">
           <section aria-labelledby="title-heading" className="relative z-10 pt-2">
             <div className="flex flex-wrap items-center gap-3 font-mono text-[0.6rem] tracking-[0.22em] uppercase">
@@ -80,7 +34,7 @@ export function TitleScreen() {
               aria-label={APP_TITLE}
               className="mt-5 font-hero text-[clamp(3.5rem,15vw,12rem)] leading-[0.8] tracking-[-0.02em] uppercase"
             >
-              <span aria-hidden="true" className="block text-glitch">
+              <span aria-hidden="true" className="block animate-glitch text-glitch">
                 SHAPE
               </span>
               <span aria-hidden="true" className="block">
@@ -88,13 +42,10 @@ export function TitleScreen() {
               </span>
             </h1>
 
-            <div className="mt-6 flex items-start gap-4">
-              <div aria-hidden="true" className="mt-1 h-16 w-1 shrink-0 bg-red" />
-              <p className="max-w-xl font-body text-xl leading-tight text-ink-inverse/80 sm:text-2xl">
-                {APP_TAGLINE}. A single-player, offline game rendered entirely with HTML, CSS, and
-                React. No canvas. No backend. No signal loss.
-              </p>
-            </div>
+            <p className="mt-6 max-w-xl border-l-4 border-red pl-4 font-body text-xl leading-tight text-ink-inverse/80 sm:text-2xl">
+              {APP_TAGLINE}. A single-player, offline game rendered entirely with HTML, CSS, and
+              React. No canvas. No backend. No signal loss.
+            </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <LinkButton to="/play" variant="inverse" size="lg">
@@ -105,19 +56,24 @@ export function TitleScreen() {
               </LinkButton>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[0.58rem] tracking-[0.2em] text-ink-inverse/60 uppercase">
-              <span>BUILD {APP_VERSION}</span>
-              <span aria-hidden="true" className="h-1 w-1 bg-red" />
-              <span>HASH ROUTER</span>
-              <span aria-hidden="true" className="h-1 w-1 bg-cyan" />
-              <span>NO CANVAS</span>
-              <span aria-hidden="true" className="h-1 w-1 bg-ink-inverse" />
-              <span>OFFLINE</span>
-            </div>
+            <ul
+              aria-label="Build details"
+              className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[0.58rem] tracking-[0.2em] text-ink-inverse/60 uppercase"
+            >
+              {buildDetails.map((detail) => (
+                <li key={detail} className="flex items-center gap-2">
+                  <span
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 shrink-0 border border-ink-inverse bg-red"
+                  />
+                  {detail}
+                </li>
+              ))}
+            </ul>
           </section>
 
           <aside className="relative">
-            <div className="border border-ink-inverse bg-void p-3 clip-corner sm:p-4">
+            <div className="clip-border relative p-3 [--clip-border:var(--color-ink-inverse)] [--clip-fill:var(--color-void)] clip-corner sm:p-4">
               <div className="relative overflow-hidden border border-line bg-panel">
                 <HeroArt className="h-[20rem] w-full sm:h-[23rem] lg:h-[26rem]" />
                 <div aria-hidden="true" className="absolute inset-0 bg-scanlines opacity-30" />
