@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   PLAYER_BASE_STATS,
+  PLAYER_CONTAINER_SIZE,
   applyDamage,
   clampPlayerToBounds,
   createPlayer,
@@ -13,6 +14,12 @@ const BOUNDS = { left: 0, top: 0, width: 800, height: 600 };
 function createTestPlayer(maxHealth = 1) {
   return createPlayer({ ...PLAYER_BASE_STATS, maxHealth }, BOUNDS);
 }
+
+describe('player configuration', () => {
+  it('starts with a container larger than the player', () => {
+    expect(PLAYER_CONTAINER_SIZE).toBeGreaterThan(PLAYER_BASE_STATS.size);
+  });
+});
 
 describe('createPlayer', () => {
   it('spawns centered with 1 health and no shield at base stats', () => {
