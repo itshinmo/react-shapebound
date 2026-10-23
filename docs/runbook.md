@@ -44,8 +44,10 @@ on pushes and pull requests.
 ## Static hosting and “offline”
 
 - `vite.config.ts` uses `base: './'` so assets resolve relative to the document.
-- `HashRouter` means routes live after `#`, so no server rewrite is required.
-- `dist/` can be served from a domain root or any subpath by a static host or `pnpm preview`.
+- Routes are clean paths with `BrowserRouter`. Vite dev and preview provide history fallback; a
+  static host must serve `index.html` for unknown paths with a 200 response.
+- `dist/` can be served from a domain root. For a subpath deployment, set Vite `base` and the router
+  `basename` together; configuring only one breaks routing or asset URLs.
 - Offline currently means **no network after the page loads**. Fonts are bundled; there are no API
   calls, remote images, analytics, or runtime font CDNs.
 - A service worker/PWA is **not** included. Do not open `dist/index.html` directly with `file://`:
@@ -56,9 +58,13 @@ on pushes and pull requests.
 Local data lives in `localStorage`:
 
 ```text
-shapebound:settings   { version: 1, reducedMotion: boolean }
+shapebound:settings   { version: 2, reducedMotion: boolean, glowIntensity: 0-100 }
 shapebound:save       { schemaVersion: 1, savedAt: ISO string, data: T }
 ```
+
+Version 1 settings records are migrated on read with `glowIntensity: 100` and rewritten as version 2.
+Glow intensity only changes the play-field player, arena, and joystick glows; the static settings
+preview mirrors it. Interface glows are fixed.
 
 To recover:
 
@@ -93,6 +99,14 @@ into `dist/assets`. Do not replace them with a Google Fonts URL — that breaks 
 **Storage is unavailable.** Private/locked-down contexts can throw on access. The app falls back to
 defaults and skips persistence; this is expected, not a crash.
 
+**Glow intensity does not change the header, buttons, or panels.** That is intentional. The setting
+drives only `glow-arena`, `glow-player`, and `glow-joystick` on the play field, plus the static
+settings preview. Interface chrome keeps its fixed `shadow-glow-*` tokens.
+
+**The reduce-motion switch still moves while reduced motion is on.** Its 150ms thumb feedback is the
+sole exception; the control's position is its state feedback. All other animations and transitions
+are disabled.
+
 **A rotate-to-landscape screen blocks the game.** This is intentional on `/play`. The title,
 settings, and not-found pages are responsive and do not require landscape. Rotate the device or widen
 the window; the play surface remounts when landscape returns.
@@ -101,6 +115,10 @@ the window; the play surface remounts when landscape returns.
 the tap is the required user gesture for fullscreen and `screen.orientation.lock('landscape')`.
 Android Chrome supports both; iOS/Safari and most desktop browsers cannot lock orientation. Failure is
 non-blocking and the rotate overlay is the fallback. There is no PWA or manifest orientation policy.
+
+**A deep link 404s on a static host.** `BrowserRouter` needs history fallback: configure the host to
+serve `index.html` for unknown paths with a 200 response. Vite dev/preview already do this. For a
+subpath deployment, set Vite `base` and the router `basename` together.
 
 **The joystick does not appear.** It is touch/pen only, and only after the run starts. A mouse click
 does not create one; a second simultaneous touch is ignored. Releasing or cancelling the pointer

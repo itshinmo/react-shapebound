@@ -106,15 +106,28 @@ Conventions:
 - Gutters: `px-4` → `sm:px-6` → `lg:px-10`.
 - The landing page is a yellow field. The nav, art panel, module strip, and footer are black
   structures with acid borders.
-- Internal screens use black fields with a yellow top bar (`border-b-4 border-ink-inverse`) and
-  black panels.
-- Corners are clipped, not rounded. Use `clip-nav` for the top bar, `clip-button` for actions,
+- Presentation pages (`/`, `/settings`, and future non-game screens) use the shared `SiteHeader`,
+  rendered once by `PresentationLayout` so it persists across route changes; the active nav item is
+  acid. `/play` is deliberately headerless and full-bleed.
+- Corners are clipped, not rounded. Use `clip-nav` for the header, `clip-button` for actions,
   `clip-corner` for panels.
+- **Clipped borders use `clip-border`, never `border-*`.** A CSS border is clipped at the diagonal
+  and disappears at the cut. `clip-border` uses the inner-layer technique: the element’s background
+  is the border color, and an absolutely positioned `::before` layer inset by
+  `--clip-border-width` (1px, 2px on focus) paints the fill with `clip-path: inherit`. Set
+  `--clip-border` and `--clip-fill`; `isolation: isolate` and a negative z-index keep the fill below
+  the content and above the border. Do not add `bg-*` to a `clip-border` element: the outer
+  background is the border. This is the canonical border treatment for buttons, panels, the site
+  header, the title art panel, and the skip link.
 - `SectionLabel` renders the `/// LABEL` marker with a thin rule and dot tail. Use cyan by default,
   red for error/warning sections, acid for storage/status modules.
-- Panels: black fill, 1px border, clipped corner. Tones: default grey, acid, cyan, red.
+- Panels: black fill, 1px `clip-border` in the tone color, clipped corner. Tones: default grey, acid,
+  cyan, red.
 - Buttons: `primary` acid fill/black text, `secondary` black fill/acid text, `inverse` black fill/acid
-  text for yellow fields, `ghost` text-only, `danger` red. Use `inverse` on yellow, `primary` on black.
+  text for yellow fields, `ghost` text-only, `danger` red fill/black text. Use `inverse` on yellow,
+  `primary` on black. All variants have hover, active (`translate-y-0.5`), and
+  `focus-visible` states. Focus uses a 2px cyan `clip-border` ring; ghost uses a focus background.
+  Do not add `border-*` to a clipped button.
 
 Background utilities:
 
@@ -132,20 +145,25 @@ Background utilities:
 
 ### Play surface
 
-The play screen is a deliberate exception to the internal-screen yellow top bar. It is full-bleed
-black with no header and no HUD.
+The play screen is a deliberate exception to the presentation pages' shared `SiteHeader`. It is
+full-bleed black with no header and no HUD.
 
 - **Background:** `bg-void` plus a faint `bg-grid` (`opacity-60`). The global scanline overlay is
   hidden on `/play`; do not add aurora, glitch, or hazard tape to the board.
 - **Player container:** a static, outline-only square centered in the safe playfield
-  (`border-2 border-cyan/60 shadow-glow-cyan`, no fill). It is the player's collision boundary and a
-  key game feature; the player sits inside it. Starting size is 320 px `[unverified]` and is
-  intended to grow through skill-tree upgrades.
-- **Player:** an acid square (`bg-acid`, `shadow-glow-acid`) sized from player stats. Position is
-  written as a transform; do not animate its layout properties.
-- **Joystick:** cyan base and knob (`border-cyan/50`, `bg-cyan/10`, `bg-cyan`,
-  `shadow-glow-cyan`). Circular shapes are a functional exception to the clipped-surface rule; do not
-  use the circle treatment for ordinary panels or buttons.
+  (`border-2 border-cyan/60 glow-arena`, no fill). It is the player's collision boundary and a key
+  game feature; the player sits inside it. Starting size is 320 px `[unverified]` and is intended to
+  grow through skill-tree upgrades.
+- **Player:** an acid square (`bg-acid glow-player`) sized from player stats. Position is written as
+  a transform; do not animate its layout properties.
+- **Joystick:** cyan base and knob (`border-cyan/50`, `bg-cyan/10`, `bg-cyan`, `glow-joystick`).
+  Circular shapes are a functional exception to the clipped-surface rule; do not use the circle
+  treatment for ordinary panels or buttons.
+- **Glow intensity:** `glow-arena`, `glow-player`, and `glow-joystick` consume `--glow-intensity`
+  (0–100, default 100) and `--glow-scale` (1; the settings preview uses 0.5). At 100 the 24 px blur
+  carries 40% cyan / 50% acid alpha, double the original 20/25% glow. Only these play utilities and
+  the settings preview consume the variable; do not apply them to interface chrome, whose glows stay
+  on the fixed `shadow-glow-*` tokens. At 0 the border and player remain visible without a glow.
 - **Overlays:** the rotate overlay uses black/ink/cyan and a `role="status"` live region. The touch
   start overlay uses the `Button` primitive; the acid button needs a cyan focus outline so the focus
   ring remains visible on black.
@@ -155,12 +173,31 @@ black with no header and no HUD.
 - **No visible HUD** in this slice: no health/shield display, visible control hints, timer, points,
   pause, or exit control. A future HUD needs a design pass.
 
+### Settings controls
+
+- **Reduce motion:** a real checkbox with a custom track and thumb. Both directions use a 150ms
+  translate/background transition (`transition-[translate,background-color]`, with explicit
+  `translate-x-0` and `translate-x-7` endpoints). The `.motion-switch` class keeps that thumb
+  feedback at 150ms even when reduced motion is on; it is the only motion exception because the thumb
+  position is the control's state feedback. The track fill and border also transition.
+- **Glow intensity:** a real `input[type=range]` from 0 to 100 in steps of 5, styled by `range-glow`
+  with a cyan progress fill, square cyan thumb, black thumb border, and cyan focus ring. It has a
+  real label and a visible percentage; the visible percentage is `aria-hidden` because the native
+  range announces the value.
+- **Static preview:** `GlowPreview` mirrors the player and arena at half scale (160 px container,
+  32 px player, 1 px border) with `--glow-scale: 0.5`. It is `aria-hidden`, non-interactive, and has
+  no motion. It is the only settings-page surface affected by glow intensity.
+
 ## Motion
 
-- Standard transition: 150ms, `ease-snap`, color/border/shadow/transform only.
+- Standard transition: 150ms, `ease-snap`, color/border/shadow/transform/translate only.
 - Ambient: `animate-drift` (grid), `animate-pulse-line` (status dots), rare `animate-flicker`.
-- Do not animate the giant hero type continuously; the glitch is a static text shadow.
-- Respect both `prefers-reduced-motion` and `html[data-reduced-motion='true']`.
+- The hero `SHAPE` word uses `animate-glitch`: a 6-second discrete loop with brief cyan/red
+  split-and-translate bursts. `BOUND` and other display type stay static; do not animate other
+  giant type continuously.
+- Respect both `prefers-reduced-motion` and `html[data-reduced-motion='true']`. The reduce-motion
+  switch thumb keeps its 150ms transition in both directions as state feedback; all other
+  transitions and animations are disabled.
 - Motion never carries information alone.
 - On `/play`, the player and joystick are the only motion. They are essential gameplay feedback, not
   decoration; reduced motion must not remove them. The board has no ambient animation.
@@ -180,19 +217,24 @@ black with no header and no HUD.
 
 - **Focus:** global `:focus-visible` uses `2px solid currentColor` with a 4px offset. On yellow,
   currentColor is black; on black, it is light ink. Component-specific cyan focus is used on the
-  settings toggle.
+  settings toggle and the glow-intensity range. Clipped buttons suppress the clipped outline and use
+  a 2px cyan `clip-border` focus ring instead; ghost buttons use a focus background.
 - **Contrast:** black on acid and ink on black are strong. Do not set body copy in cyan/red on
   yellow. Do not put acid text on white/yellow without a black backing.
 - **Semantics:** one `h1` per screen, `button` for actions, `Link` for navigation, labels for inputs.
-- **Keyboard:** every action reachable; the settings switch is a real checkbox; skip control focuses
-  `<main>` without changing the hash route.
+- **Keyboard:** every action reachable; the settings switch is a real checkbox and the glow control
+  is a real range input; skip control focuses `<main>` without changing the route.
 - **Play surface:** the board is a region with a visually hidden `h1` and movement instructions. The
   rotate overlay is a `role="status"` live region. The player, container outline, and joystick are
-  `aria-hidden` visual representations; the domain state is the source of truth.
+  `aria-hidden` visual representations; the domain state is the source of truth. The settings glow
+  preview is also `aria-hidden`; it adds no controls and carries no information that is not in the
+  range value.
 - **Play start:** the touch start overlay uses a real `button`. On the acid button, use a cyan focus
   outline so the ring remains visible against black.
-- **Reduced motion:** system preference and in-app setting both disable drift/flicker/transitions.
-- **Decorative art:** hero SVG, grids, scanlines, halftone, and the board preview are `aria-hidden`.
+- **Reduced motion:** system preference and in-app setting both disable drift/flicker/glitch/
+  transitions, except the reduce-motion switch thumb feedback documented under Motion.
+- **Decorative art:** hero SVG, grids, scanlines, halftone, and the play-surface decoration are
+  `aria-hidden`.
 - **Color is not the only signal:** status chips include text (`ONLINE`, `PENDING`), not just color.
 
 ## Extension rules

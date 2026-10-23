@@ -8,7 +8,7 @@ last-verified: 2026-10-23
 ## Layers
 
 ```text
-src/app       composition root: router, shell, error boundary, providers
+src/app       composition root: router, shell, presentation layout, error boundary, providers
 src/features  screens and feature-owned state (title, play, settings, not-found; play owns the gate)
 src/game      pure domain: RNG, save envelope, player rules
 src/shared    cross-cutting primitives: UI, storage, config
@@ -22,16 +22,21 @@ Enforced by `eslint.config.js` (`import-x/no-restricted-paths`, restricted impor
 
 ## Routing
 
-- `HashRouter` + declarative `<Routes>` in `src/app/app.tsx`.
+- `BrowserRouter` + declarative `<Routes>` in `src/app/app.tsx`.
 - Routes: `/` title, `/play` landscape movement board, `/settings`, `*` not-found.
-- Hash routing is deliberate for static/offline hosting. Do not switch to `BrowserRouter` without
-  an ADR and host fallback config.
+- Clean URLs are deliberate (ADR-010). Static hosts need an `index.html` fallback; subpath hosting
+  needs matching Vite `base` and router `basename`. `PresentationLayout` renders `SiteHeader` once
+  and routes presentation pages through `<Outlet />`; `/play` is outside it and headerless.
 
 ## Settings
 
 - `src/features/settings/` owns the context, provider, storage, and screen.
 - `SettingsProvider` wraps the router in `src/app/app.tsx`.
-- Reduced motion is persisted and mirrored to `document.documentElement.dataset.reducedMotion`.
+- Settings schema v2 persists reduced motion and glow intensity (0–100). v1 records migrate on read
+  with `glowIntensity: 100`.
+- Reduced motion is mirrored to `document.documentElement.dataset.reducedMotion`; glow intensity is
+  mirrored to the `--glow-intensity` custom property. Only play glow utilities and the static
+  settings preview consume it; interface glows stay fixed.
 
 ## Game domain
 
@@ -62,7 +67,8 @@ Enforced by `eslint.config.js` (`import-x/no-restricted-paths`, restricted impor
 ## Deliberate constraints — do not “fix”
 
 - **No canvas/WebGL.** DOM-only is an accessibility and testability decision (ADR-002).
-- **Hash URLs are intentional.** They avoid server rewrite requirements (ADR-001).
+- **Clean URLs need a host fallback.** BrowserRouter is intentional; configure SPA history fallback
+  (ADR-010).
 - **No state library yet.** Reducer + context until measured need (ADR-003).
 - **No runtime network.** Offline is a product requirement (ADR-001).
 - **No CSS Modules.** Tailwind + theme tokens is the styling system (ADR-005).

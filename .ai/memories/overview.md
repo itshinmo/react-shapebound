@@ -8,7 +8,7 @@ last-verified: 2026-10-23
 **react-shapebound** (working title **Shapebound**) is a single-player, offline browser game. The
 game is rendered with HTML and CSS — no canvas, no WebGL, no backend.
 
-- Stack: React 19, TypeScript 6 (strict), Vite 8, React Router 8 (declarative + `HashRouter`),
+- Stack: React 19, TypeScript 6 (strict), Vite 8, React Router 8 (declarative + `BrowserRouter`),
   Tailwind CSS 4, and bundled OFL fonts (Anton, Chakra Petch, Rajdhani, JetBrains Mono).
 - Persistence: `localStorage`, versioned save envelope, local settings.
 - Testing: Vitest + Testing Library. Quality gate: ESLint + Prettier + `tsc` + Vitest.
