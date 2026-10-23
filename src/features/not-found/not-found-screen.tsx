@@ -3,17 +3,8 @@ import { SectionLabel } from '@/shared/ui/section-label';
 
 export function NotFoundScreen() {
   return (
-    <div className="relative flex min-h-svh flex-col overflow-x-clip bg-paper px-4 py-6 text-ink-inverse sm:px-6">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-halftone opacity-30"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-grid-ink opacity-30"
-      />
-
-      <div className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col">
+    <div className="relative flex flex-1 flex-col overflow-x-clip">
+      <div className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-6">
         <SectionLabel tone="red" className="text-red">
           ROUTE_ERROR // 404
         </SectionLabel>

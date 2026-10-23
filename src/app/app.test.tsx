@@ -22,7 +22,7 @@ function setPortrait(): void {
 
 describe('App routing', () => {
   beforeEach(() => {
-    window.location.hash = '';
+    window.history.replaceState({}, '', '/');
   });
 
   it('renders the title screen at the root route', () => {
@@ -38,8 +38,26 @@ describe('App routing', () => {
     expect(screen.getByRole('heading', { level: 1, name: /shapebound/i })).toBeInTheDocument();
   });
 
+  it('renders the shared header on settings', () => {
+    window.history.pushState({}, '', '/settings');
+
+    render(<App />);
+
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /03 \/\/ config/i })).toBeInTheDocument();
+  });
+
+  it('renders the play screen outside the presentation layout', () => {
+    window.history.pushState({}, '', '/play');
+
+    render(<App />);
+
+    expect(screen.getByRole('region', { name: 'Play field' })).toBeInTheDocument();
+    expect(screen.queryByRole('banner')).not.toBeInTheDocument();
+  });
+
   it('renders the not-found screen for an unknown route', () => {
-    window.location.hash = '#/missing';
+    window.history.pushState({}, '', '/missing');
 
     render(<App />);
 
