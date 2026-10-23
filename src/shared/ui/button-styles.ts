@@ -4,17 +4,18 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'inve
 export type ButtonSize = 'md' | 'lg';
 
 const base =
-  'clip-button group relative inline-flex items-center justify-center gap-3 border font-display text-[0.72rem] font-semibold uppercase tracking-[0.18em] transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-snap disabled:pointer-events-none disabled:opacity-40';
+  'clip-button group relative inline-flex items-center justify-center gap-3 font-display text-[0.72rem] font-semibold uppercase tracking-[0.18em] transition-[background-color,color,box-shadow,transform] duration-150 ease-snap focus-visible:outline-none focus-visible:[--clip-border:var(--color-cyan)] focus-visible:[--clip-border-width:2px] active:translate-y-0.5 disabled:pointer-events-none disabled:opacity-40';
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    'border-acid bg-acid text-ink-inverse shadow-glow-acid hover:-translate-y-0.5 hover:border-ink hover:bg-ink hover:text-void active:translate-y-0',
+    'clip-border text-ink-inverse shadow-glow-acid [--clip-border:var(--color-acid)] [--clip-fill:var(--color-acid)] hover:-translate-y-0.5 hover:text-void hover:[--clip-border:var(--color-ink)] hover:[--clip-fill:var(--color-ink)]',
   secondary:
-    'border-acid bg-void/80 text-acid hover:border-cyan hover:text-cyan hover:shadow-glow-cyan',
-  ghost: 'border-transparent bg-transparent text-muted hover:text-ink',
-  danger: 'border-red bg-red/10 text-red hover:bg-red hover:text-ink-inverse',
+    'clip-border text-acid [--clip-border:var(--color-acid)] [--clip-fill:var(--color-void)] hover:text-cyan hover:shadow-glow-cyan hover:[--clip-border:var(--color-cyan)]',
+  ghost: 'bg-transparent text-muted hover:text-ink focus-visible:bg-void/60 focus-visible:text-ink',
+  danger:
+    'clip-border text-ink-inverse [--clip-border:var(--color-red)] [--clip-fill:var(--color-red)] hover:-translate-y-0.5',
   inverse:
-    'border-ink-inverse bg-ink-inverse text-acid hover:border-ink-inverse hover:bg-cyan hover:text-ink-inverse',
+    'clip-border text-acid [--clip-border:var(--color-ink-inverse)] [--clip-fill:var(--color-ink-inverse)] hover:text-ink-inverse hover:[--clip-fill:var(--color-cyan)]',
 };
 
 const sizes: Record<ButtonSize, string> = {
