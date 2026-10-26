@@ -1,10 +1,23 @@
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { stepEnemies } from '@/game/enemy-world';
+import type * as EnemyWorldModule from '@/game/enemy-world';
 import { renderWithProviders } from '@/test/render';
 
 import { PlayScreen } from './play-screen';
+
+vi.mock('@/game/enemy-world', async (importOriginal) => {
+  const actual = await importOriginal<typeof EnemyWorldModule>();
+
+  return {
+    ...actual,
+    stepEnemies: vi.fn(actual.stepEnemies),
+  };
+});
+
+const actualStepEnemies = vi.mocked(stepEnemies).getMockImplementation();
 
 function createMediaQueryList(query: string, matches: boolean): MediaQueryList {
   return {
@@ -65,13 +78,21 @@ describe('PlayScreen', () => {
   });
 
   afterEach(() => {
+    if (actualStepEnemies !== undefined) {
+      vi.mocked(stepEnemies).mockImplementation(actualStepEnemies);
+    }
+
     vi.unstubAllGlobals();
   });
 
   it('renders the play field, enemy layer, and HUD on desktop without a header or pause control', () => {
     renderWithProviders(<PlayScreen />, { route: '/play' });
 
-    expect(screen.getByRole('region', { name: 'Play field' })).toBeInTheDocument();
+    const playField = screen.getByRole('region', { name: 'Play field' });
+
+    expect(playField).toBeInTheDocument();
+    expect(playField).toHaveAttribute('tabindex', '-1');
+    expect(playField).not.toHaveAttribute('inert');
     expect(screen.getByRole('heading', { level: 1, name: /play field/i })).toBeInTheDocument();
     expect(screen.getByText(/move with w a s d/i)).toBeInTheDocument();
     expectEnemyLayer();
@@ -119,5 +140,55 @@ describe('PlayScreen', () => {
     expect(screen.queryByRole('region', { name: 'Play field' })).not.toBeInTheDocument();
     expect(screen.queryByTestId('enemy-layer')).not.toBeInTheDocument();
     expect(screen.queryByTestId('run-hud')).not.toBeInTheDocument();
+  });
+
+  it('mounts the run-over on death, inerts the play field, and restores focus on Retry', async () => {
+    const user = userEvent.setup();
+    const frames: FrameRequestCallback[] = [];
+
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+    vi.mocked(stepEnemies).mockImplementation((world) => ({
+      world,
+      hit: { slotId: 0, kind: 'red-square', atMs: 20 },
+    }));
+
+    renderWithProviders(<PlayScreen />, { route: '/play' });
+
+    const playField = screen.getByRole('region', { name: 'Play field' });
+    const frame = frames[0];
+
+    expect(playField).not.toHaveAttribute('inert');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(frame).toBeDefined();
+
+    if (frame === undefined) {
+      return;
+    }
+
+    act(() => {
+      frame(performance.now() + 100);
+    });
+
+    await screen.findByRole('dialog');
+
+    expect(playField).toHaveAttribute('inert');
+    expect(screen.getByRole('heading', { level: 2, name: 'SIGNAL LOST' })).toHaveFocus();
+    expect(screen.getByRole('timer')).toHaveTextContent('00:00:02');
+    expect(screen.getByTestId('run-hud').className).toContain('z-30');
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(playField).not.toHaveAttribute('inert');
+
+    await waitFor(() => {
+      expect(playField).toHaveFocus();
+    });
+
+    expect(screen.getByRole('timer')).toHaveTextContent('00:00:00');
   });
 });

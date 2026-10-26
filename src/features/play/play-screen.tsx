@@ -23,6 +23,7 @@ import { PlayerContainer } from './player-container';
 import { PlayerSquare } from './player-square';
 import { createProgressionStorage } from './progression-storage';
 import { RunHud } from './run-hud';
+import { RunOverOverlay } from './run-over-overlay';
 import { createRunSeed } from './run-seed';
 import { StartOverlay } from './start-overlay';
 import { TouchJoystick } from './touch-joystick';
@@ -61,6 +62,7 @@ function PlaySurface() {
   const enemyLayerHandleRef = useRef<EnemyLayerHandle | null>(null);
   const hudRef = useRef<RunHudHandle | null>(null);
   const playerStateRef = useRef<PlayerState | null>(null);
+  const wasOverRef = useRef(false);
   const boundsRef = useRef<Bounds>(INITIAL_BOUNDS);
   const viewportRef = useRef<ViewportRect>(INITIAL_VIEWPORT);
   const arenaOffsetRef = useRef<ArenaOffset>(INITIAL_ARENA_OFFSET);
@@ -248,6 +250,7 @@ function PlaySurface() {
     onFrame: handleFrame,
     onReset: handleReset,
   });
+  const isOver = runLoop.snapshot.status === 'over';
 
   useEffect(() => {
     const board = boardRef.current;
@@ -256,6 +259,28 @@ function PlaySurface() {
       void releaseLandscapeLock(board).catch(() => undefined);
     };
   }, []);
+
+  useEffect(() => {
+    if (isOver) {
+      wasOverRef.current = true;
+      return;
+    }
+
+    if (!wasOverRef.current) {
+      return;
+    }
+
+    wasOverRef.current = false;
+    boardRef.current?.focus({ preventScroll: true });
+  }, [isOver]);
+
+  useEffect(() => {
+    if (!isOver) {
+      return;
+    }
+
+    hudRef.current?.write(runLoop.runRef.current);
+  }, [isOver, runLoop.runRef]);
 
   const handleStart = useCallback(() => {
     if (starting) {
@@ -273,35 +298,51 @@ function PlaySurface() {
   }, [starting]);
 
   return (
-    <section
-      ref={boardRef}
-      aria-label="Play field"
-      aria-describedby="play-instructions"
-      className="fixed inset-0 touch-none overflow-hidden overscroll-none bg-void select-none"
-      {...pointerHandlers}
-    >
-      <h1 className="sr-only">Play field</h1>
-      <p id="play-instructions" className="sr-only">
-        Move with W A S D or the arrow keys. On a touch screen, drag anywhere to use the joystick.
-        Stay inside the outlined arena.
-      </p>
+    <>
+      <section
+        ref={boardRef}
+        aria-label="Play field"
+        aria-describedby="play-instructions"
+        tabIndex={-1}
+        inert={isOver}
+        className="fixed inset-0 touch-none overflow-hidden overscroll-none bg-void select-none focus:outline-none"
+        {...pointerHandlers}
+      >
+        <h1 className="sr-only">Play field</h1>
+        <p id="play-instructions" className="sr-only">
+          Move with W A S D or the arrow keys. On a touch screen, drag anywhere to use the joystick.
+          Stay inside the outlined arena.
+        </p>
 
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-grid opacity-60" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-grid opacity-60"
+        />
 
-      <div className="absolute inset-0 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]">
-        <div className="relative h-full w-full">
-          <PlayerContainer arenaRef={arenaRef} size={PLAYER_CONTAINER_SIZE}>
-            <PlayerSquare playerRef={playerRef} size={PLAYER_BASE_STATS.size} />
-          </PlayerContainer>
+        <div className="absolute inset-0 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]">
+          <div className="relative h-full w-full">
+            <PlayerContainer arenaRef={arenaRef} size={PLAYER_CONTAINER_SIZE}>
+              <PlayerSquare playerRef={playerRef} size={PLAYER_BASE_STATS.size} />
+            </PlayerContainer>
+          </div>
         </div>
-      </div>
 
-      <EnemyLayer ref={enemyLayerHandleRef} layerRef={enemyLayerRef} />
+        <EnemyLayer ref={enemyLayerHandleRef} layerRef={enemyLayerRef} />
 
-      <TouchJoystick state={joystickState} knobRef={joystickKnobRef} />
-      {started ? <RunHud ref={hudRef} banner={runLoop.snapshot.banner} /> : null}
-      {started ? null : <StartOverlay onStart={handleStart} pending={starting} />}
-    </section>
+        <TouchJoystick state={joystickState} knobRef={joystickKnobRef} />
+        {started ? <RunHud ref={hudRef} banner={runLoop.snapshot.banner} /> : null}
+        {started ? null : <StartOverlay onStart={handleStart} pending={starting} />}
+      </section>
+      {isOver ? (
+        <RunOverOverlay
+          finalElapsedMs={runLoop.runRef.current.elapsedMs}
+          commit={runLoop.snapshot.commit}
+          committedData={runLoop.committedData}
+          onRetry={runLoop.retry}
+          onRetryCommit={runLoop.retryCommit}
+        />
+      ) : null}
+    </>
   );
 }
 
