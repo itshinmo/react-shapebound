@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderWithProviders } from '@/test/render';
 
@@ -41,35 +41,61 @@ function expectEnemyLayer(): void {
   expect(screen.getAllByTestId('enemy-beam')).toHaveLength(2);
 }
 
+function expectRunHud(): void {
+  const hud = screen.getByTestId('run-hud');
+
+  expect(hud).toHaveAttribute('data-run-hud');
+  expect(hud.className).toContain('pointer-events-none');
+  expect(hud.className).toContain('z-30');
+  expect(screen.getByRole('timer')).toHaveTextContent('00:00:00');
+  expect(screen.getByText('RUN TIME')).toBeInTheDocument();
+  expect(screen.getByRole('group', { name: 'Blue points: 0' })).toBeInTheDocument();
+  expect(screen.getByText('BOSS CYCLE:')).toBeInTheDocument();
+  expect(screen.getByTestId('run-timeline')).toBeInTheDocument();
+}
+
 describe('PlayScreen', () => {
   beforeEach(() => {
     setTouchDevice(false);
+    vi.stubGlobal(
+      'requestAnimationFrame',
+      vi.fn(() => 1),
+    );
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
   });
 
-  it('renders the play field and enemy layer without a header or HUD on desktop', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('renders the play field, enemy layer, and HUD on desktop without a header or pause control', () => {
     renderWithProviders(<PlayScreen />, { route: '/play' });
 
     expect(screen.getByRole('region', { name: 'Play field' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: /play field/i })).toBeInTheDocument();
     expect(screen.getByText(/move with w a s d/i)).toBeInTheDocument();
     expectEnemyLayer();
+    expectRunHud();
     expect(screen.queryByRole('banner')).not.toBeInTheDocument();
-    expect(screen.queryByRole('timer')).not.toBeInTheDocument();
-    expect(screen.queryByText(/run time/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/boss marker/i)).not.toBeInTheDocument();
+    expect(screen.queryByTestId('boss-banner')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /pause/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /start/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/shield/i)).not.toBeInTheDocument();
   });
 
-  it('shows the start overlay on touch and starts after the tap', async () => {
+  it('hides the HUD behind the START gate on touch and shows it after the tap', async () => {
     setTouchDevice(true);
     const user = userEvent.setup();
 
     renderWithProviders(<PlayScreen />, { route: '/play' });
 
     const start = screen.getByRole('button', { name: /start/i });
+
     expect(start).toBeInTheDocument();
+    expect(screen.queryByTestId('run-hud')).not.toBeInTheDocument();
+    expect(screen.queryByRole('timer')).not.toBeInTheDocument();
     expectEnemyLayer();
 
     await user.click(start);
@@ -78,6 +104,7 @@ describe('PlayScreen', () => {
       expect(screen.queryByRole('button', { name: /start/i })).not.toBeInTheDocument();
     });
 
+    expectRunHud();
     expectEnemyLayer();
   });
 
@@ -91,5 +118,6 @@ describe('PlayScreen', () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Play field' })).not.toBeInTheDocument();
     expect(screen.queryByTestId('enemy-layer')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('run-hud')).not.toBeInTheDocument();
   });
 });
