@@ -7,7 +7,8 @@ accepted, an ADR is **superseded**, never rewritten.
 
 - File name: `ADR-NNN-<kebab-case-title>.md`; the next free number is never reused.
 - Each ADR is self-contained: a reader with only the ADR understands the decision and why.
-- `Status`: `Proposed` | `Accepted` | `Superseded by ADR-NNN` | `Rejected`.
+- `Status`: `Proposed` | `Accepted` | `Superseded by ADR-NNN` | `Rejected`. A partial supersession may
+  add a parenthetical scope note, for example `Superseded by ADR-015 (glow scope only)`.
 - A later decision supersedes an earlier one with a new ADR. The old one only gains the superseded
   status.
 - A new **runtime** dependency needs an ADR.
@@ -25,15 +26,20 @@ belongs in `docs/`.
 
 ## Index
 
-| ADR                                                          | Title                                                          | Status                        | Topic                           |
-| ------------------------------------------------------------ | -------------------------------------------------------------- | ----------------------------- | ------------------------------- |
-| [ADR-001](ADR-001-vite-react-spa.md)                         | Vite + React SPA with hash routing                             | Superseded by ADR-010         | app architecture                |
-| [ADR-002](ADR-002-dom-only-rendering.md)                     | DOM-only rendering, no canvas                                  | Accepted                      | rendering                       |
-| [ADR-003](ADR-003-pure-game-domain.md)                       | Pure game domain, seeded RNG, versioned local saves            | Accepted                      | game domain / persistence       |
-| [ADR-004](ADR-004-agent-agnostic-knowledge-layer.md)         | Agent-agnostic knowledge layer and guardrails                  | Accepted                      | process / AI tooling            |
-| [ADR-005](ADR-005-tailwind-and-local-fonts.md)               | Tailwind CSS 4, local fonts, cyberpunk-inspired design         | Accepted (refined by ADR-006) | styling / design system         |
-| [ADR-006](ADR-006-cyberpunk-reference-visual-system.md)      | Align the visual system with the live Cyberpunk 2077 reference | Accepted                      | design system / visual identity |
-| [ADR-007](ADR-007-landscape-only-play-surface.md)            | Landscape-only play surface and best-effort orientation lock   | Superseded by ADR-008         | play surface / platform         |
-| [ADR-008](ADR-008-responsive-presentation-landscape-play.md) | Responsive presentation, landscape-only play screen            | Superseded by ADR-009         | routing / orientation           |
-| [ADR-009](ADR-009-static-player-container.md)                | Static outlined player container as the play boundary          | Accepted                      | game domain / play surface      |
-| [ADR-010](ADR-010-clean-browser-urls.md)                     | Clean browser URLs with a static-host fallback                 | Accepted                      | routing / static hosting        |
+| ADR                                                          | Title                                                          | Status                                  | Topic                                |
+| ------------------------------------------------------------ | -------------------------------------------------------------- | --------------------------------------- | ------------------------------------ |
+| [ADR-001](ADR-001-vite-react-spa.md)                         | Vite + React SPA with hash routing                             | Superseded by ADR-010                   | app architecture                     |
+| [ADR-002](ADR-002-dom-only-rendering.md)                     | DOM-only rendering, no canvas                                  | Accepted                                | rendering                            |
+| [ADR-003](ADR-003-pure-game-domain.md)                       | Pure game domain, seeded RNG, versioned local saves            | Accepted                                | game domain / persistence            |
+| [ADR-004](ADR-004-agent-agnostic-knowledge-layer.md)         | Agent-agnostic knowledge layer and guardrails                  | Accepted                                | process / AI tooling                 |
+| [ADR-005](ADR-005-tailwind-and-local-fonts.md)               | Tailwind CSS 4, local fonts, cyberpunk-inspired design         | Accepted (refined by ADR-006)           | styling / design system              |
+| [ADR-006](ADR-006-cyberpunk-reference-visual-system.md)      | Align the visual system with the live Cyberpunk 2077 reference | Accepted                                | design system / visual identity      |
+| [ADR-007](ADR-007-landscape-only-play-surface.md)            | Landscape-only play surface and best-effort orientation lock   | Superseded by ADR-008                   | play surface / platform              |
+| [ADR-008](ADR-008-responsive-presentation-landscape-play.md) | Responsive presentation, landscape-only play screen            | Superseded by ADR-009                   | routing / orientation                |
+| [ADR-009](ADR-009-static-player-container.md)                | Static outlined player container as the play boundary          | Accepted                                | game domain / play surface           |
+| [ADR-010](ADR-010-clean-browser-urls.md)                     | Clean browser URLs with a static-host fallback                 | Accepted                                | routing / static hosting             |
+| [ADR-011](ADR-011-progression-save-v1.md)                    | Progression save v1 and unreadable-save policy                 | Accepted                                | game domain / persistence            |
+| [ADR-012](ADR-012-viewport-enemy-simulation.md)              | Viewport-space enemy simulation with pure fixed-step pools     | Accepted                                | game domain / rendering              |
+| [ADR-013](ADR-013-portrait-pause.md)                         | Portrait pause preserves the active run                        | Accepted                                | play surface / run lifecycle         |
+| [ADR-014](ADR-014-semantic-run-colors.md)                    | Semantic blue/purple/green/glow extension                      | Superseded by ADR-015 (glow scope only) | design system / visual identity      |
+| [ADR-015](ADR-015-in-run-glow-scope.md)                      | In-run glow scope and intensity utilities                      | Accepted                                | design system / glow / accessibility |
