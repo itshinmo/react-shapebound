@@ -25,6 +25,11 @@
   --color-red: #fe1038;
   --color-orange: #ff6000;
   --color-danger: #fe1038;
+  --color-survival: #2f7bff;
+  --color-boss-purple: #b45cff;
+  --color-boss-green: #3ddc84;
+  --color-boss-orange: #ff6000;
+  --color-track: #c7d0d6;
 
   --radius-panel: 0.125rem;
   --shadow-glow-acid: 0 0 24px rgb(252 238 10 / 0.25);
@@ -376,6 +381,49 @@
 @utility glow-joystick {
   box-shadow: 0 0 calc((12px + var(--glow-intensity, 100) * 0.12px) * var(--glow-scale, 1))
     color-mix(in srgb, var(--color-cyan) calc(var(--glow-intensity, 100) * 0.4%), transparent);
+}
+
+@utility clip-diamond {
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
+@utility bg-warning-lane {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent 0 5px,
+    color-mix(in srgb, var(--color-orange) 26%, transparent) 5px 6px
+  );
+}
+
+@utility glow-enemy {
+  box-shadow: 0 0 calc((12px + var(--glow-intensity, 100) * 0.12px) * var(--glow-scale, 1))
+    color-mix(in srgb, currentColor calc(var(--glow-intensity, 100) * 0.35%), transparent);
+}
+
+@utility glow-warning {
+  box-shadow: 0 0 calc((12px + var(--glow-intensity, 100) * 0.12px) * var(--glow-scale, 1))
+    color-mix(in srgb, currentColor calc(var(--glow-intensity, 100) * 0.3%), transparent);
+}
+
+@utility glow-track {
+  filter: drop-shadow(
+    0 0 calc((6px + var(--glow-intensity, 100) * 0.06px) * var(--glow-scale, 1))
+      color-mix(in srgb, currentColor calc(var(--glow-intensity, 100) * 0.18%), transparent)
+  );
+}
+
+@utility glow-hud {
+  filter: drop-shadow(
+    0 0 calc((12px + var(--glow-intensity, 100) * 0.12px) * var(--glow-scale, 1))
+      color-mix(in srgb, currentColor calc(var(--glow-intensity, 100) * 0.22%), transparent)
+  );
+}
+
+@utility glow-danger {
+  filter: drop-shadow(
+    0 0 calc((14px + var(--glow-intensity, 100) * 0.14px) * var(--glow-scale, 1))
+      color-mix(in srgb, currentColor calc(var(--glow-intensity, 100) * 0.2%), transparent)
+  );
 }
 
 @utility range-glow {
