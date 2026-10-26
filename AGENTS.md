@@ -162,9 +162,12 @@ column, review the right column **in the same change**.
   a HUD to it without a design pass. The title, settings, and presentation pages stay responsive in
   both orientations and use the shared `SiteHeader` rendered once by `PresentationLayout`; `/play`
   is headerless and outside that layout.
-- Glow intensity is play-only. Only the `glow-player`, `glow-arena`, and `glow-joystick` utilities
-  and the static settings preview may consume `--glow-intensity`; interface chrome keeps fixed
-  `shadow-glow-*` treatments.
+- Glow intensity controls every in-run surface: player, arena, joystick, enemy bodies, warning
+  lanes/beams, timeline track and future/current nodes, boss banner, pause connector, run-over
+  panel, and the static preview. Use `glow-player`, `glow-arena`, `glow-joystick`, `glow-enemy`,
+  `glow-warning`, `glow-track`, `glow-hud`, and `glow-danger`. Presentation pages, timer/points/legend/
+  scrim, the menu button, pause dialog frame/buttons, and all focus rings stay fixed or unglowed.
+  Never add `shadow-glow-track` or a fixed ambient glow to an in-run surface.
 - Clipped surfaces use `clip-border` with `--clip-border` and `--clip-fill`, never `border-*` or
   `bg-*`. The element background is the border; an inset `::before` paints the fill with `clip-path:
 inherit`. This is the canonical border treatment for buttons, panels, the site header, the title
@@ -172,8 +175,10 @@ inherit`. This is the canonical border treatment for buttons, panels, the site h
 - Use semantic HTML first: `button` for actions, `a`/`Link` for navigation, headings in order,
   labels for inputs. Do not put click handlers on plain `div`s.
 - Use the semantic color tokens (`void`, `panel`, `paper`, `ink`, `ink-inverse`, `muted`, `acid`,
-  `cyan`, `red`) rather than raw palette values. The acid/cyan/red triad is the identity; do not
-  introduce a new accent without a design note.
+  `cyan`, `red`, `orange`, `survival`, `boss-purple`, `boss-green`, `boss-orange`, `track`) rather
+  than raw palette values. `survival` is blue-point currency; `boss-*` are boss identity only;
+  `orange` remains the triangle threat; `track` is timeline structure only. The acid/cyan/red triad
+  remains the identity; do not introduce a new accent without a design note or ADR.
 - The visual system follows `docs/design-system.md` and `decisions/ADR-006`. Use `font-hero` (Anton)
   only for oversized display, `font-display` for UI headings/buttons, `font-body` for copy, and
   `font-mono` for HUD labels. Use `ink-inverse` on yellow and `ink` on black.
