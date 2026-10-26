@@ -12,6 +12,7 @@ import {
   stepPlayer,
 } from '@/game/player';
 import type { Bounds, PlayerState } from '@/game/player';
+import { createRun } from '@/game/run';
 import { getBrowserStorage } from '@/shared/lib/storage';
 
 import { EnemyLayer } from './enemy-layer';
@@ -21,6 +22,7 @@ import { releaseLandscapeLock, requestLandscapeLock } from './orientation-lock';
 import { PlayerContainer } from './player-container';
 import { PlayerSquare } from './player-square';
 import { createProgressionStorage } from './progression-storage';
+import { RunHud } from './run-hud';
 import { createRunSeed } from './run-seed';
 import { StartOverlay } from './start-overlay';
 import { TouchJoystick } from './touch-joystick';
@@ -29,6 +31,7 @@ import { useRunLoop } from './use-run-loop';
 import { useTouchJoystick } from './use-touch-joystick';
 
 import type { EnemyLayerHandle } from './enemy-layer';
+import type { RunHudHandle } from './run-hud';
 import type { RunFrame, RunFrameResult } from './use-run-loop';
 
 const RESIZE_SETTLE_MS = 200;
@@ -56,6 +59,7 @@ function PlaySurface() {
   const playerRef = useRef<HTMLDivElement>(null);
   const enemyLayerRef = useRef<HTMLDivElement>(null);
   const enemyLayerHandleRef = useRef<EnemyLayerHandle | null>(null);
+  const hudRef = useRef<RunHudHandle | null>(null);
   const playerStateRef = useRef<PlayerState | null>(null);
   const boundsRef = useRef<Bounds>(INITIAL_BOUNDS);
   const viewportRef = useRef<ViewportRect>(INITIAL_VIEWPORT);
@@ -113,12 +117,19 @@ function PlaySurface() {
       left: arenaRect.left - layerRect.left,
       top: arenaRect.top - layerRect.top,
     };
+    hudRef.current?.setArenaTop(arenaOffsetRef.current.top);
     writePlayerTransform(playerRef.current, nextPlayer);
   }, []);
 
   useLayoutEffect(() => {
     measureViewport();
   }, [measureViewport]);
+
+  useEffect(() => {
+    if (started) {
+      hudRef.current?.setArenaTop(arenaOffsetRef.current.top);
+    }
+  }, [started]);
 
   useEffect(() => {
     let settleTimer: number | null = null;
@@ -209,6 +220,8 @@ function PlaySurface() {
         enemyLayerHandleRef.current?.write(world);
       }
 
+      hudRef.current?.write(frame.run);
+
       return deathAtMs === null
         ? { playerAlive: true, deathAtMs: null }
         : { playerAlive: false, deathAtMs };
@@ -224,9 +237,10 @@ function PlaySurface() {
     playerStateRef.current = nextPlayer;
     writePlayerTransform(playerRef.current, nextPlayer);
     enemyLayerHandleRef.current?.write(nextWorld);
+    hudRef.current?.write(createRun(seed));
   }, []);
 
-  useRunLoop({
+  const runLoop = useRunLoop({
     running: started,
     initialSeed: initial.seed,
     createSeed: createRunSeed,
@@ -285,6 +299,7 @@ function PlaySurface() {
       <EnemyLayer ref={enemyLayerHandleRef} layerRef={enemyLayerRef} />
 
       <TouchJoystick state={joystickState} knobRef={joystickKnobRef} />
+      {started ? <RunHud ref={hudRef} banner={runLoop.snapshot.banner} /> : null}
       {started ? null : <StartOverlay onStart={handleStart} pending={starting} />}
     </section>
   );
