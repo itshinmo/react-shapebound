@@ -132,9 +132,9 @@ export function TitleScreen() {
         </div>
 
         <section className="border border-ink-inverse bg-void p-4 text-ink sm:p-5">
-          <SectionLabel tone="cyan">SYSTEM_MODULES</SectionLabel>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <article className="border border-cyan/50 bg-panel p-4">
+          <SectionLabel tone="cyan">SYSTEM_MODULES // DEVELOPMENT_HISTORY</SectionLabel>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <article className="flex h-full flex-col border border-cyan/50 bg-panel p-4">
               <p className="font-mono text-[0.58rem] tracking-[0.2em] text-cyan uppercase">
                 MODULE_01 // RENDER
               </p>
@@ -144,26 +144,101 @@ export function TitleScreen() {
               <p className="mt-2 font-body text-sm leading-snug text-muted">
                 Semantic elements, CSS layout, and keyboard access. No canvas, no WebGL.
               </p>
-              <span className="mt-4 inline-block border border-cyan px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-cyan uppercase">
-                ONLINE
-              </span>
+              <div className="mt-auto pt-4">
+                <span className="inline-block border border-cyan px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-cyan uppercase">
+                  FOUNDATION
+                </span>
+              </div>
             </article>
 
-            <article className="border border-acid/50 bg-panel p-4">
+            <article className="flex h-full flex-col border border-acid/50 bg-panel p-4">
               <p className="font-mono text-[0.58rem] tracking-[0.2em] text-acid uppercase">
                 MODULE_02 // MOVEMENT
               </p>
               <h2 className="mt-2 font-display text-2xl font-bold tracking-[0.02em] uppercase">
-                PLAYABLE SLICE
+                FIRST PLAYABLE
               </h2>
               <p className="mt-2 font-body text-sm leading-snug text-muted">
-                The play board has a movable square, keyboard input, a touch joystick, a survival
-                clock, blue points, and enemy threats. The skill tree is a locked preview; upgrades,
-                combat, and bosses are not built.
+                The first playable board: a movable square, keyboard input, a touch joystick, and a
+                static outlined container.
               </p>
-              <span className="mt-4 inline-block border border-acid px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-acid uppercase">
-                SLICE 01
-              </span>
+              <div className="mt-auto pt-4">
+                <span className="inline-block border border-acid px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-acid uppercase">
+                  SLICE 01
+                </span>
+              </div>
+            </article>
+
+            <article className="flex h-full flex-col border border-cyan/50 bg-panel p-4">
+              <p className="font-mono text-[0.58rem] tracking-[0.2em] text-cyan uppercase">
+                MODULE_03 // SURVIVAL
+              </p>
+              <h2 className="mt-2 font-display text-2xl font-bold tracking-[0.02em] uppercase">
+                SURVIVAL LOOP
+              </h2>
+              <p className="mt-2 font-body text-sm leading-snug text-muted">
+                Active-time clock, blue points at one per second, a 320 px timeline, five-minute
+                boss markers, and an overlay run HUD.
+              </p>
+              <div className="mt-auto pt-4">
+                <span className="inline-block border border-cyan px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-cyan uppercase">
+                  SLICE 02
+                </span>
+              </div>
+            </article>
+
+            <article className="flex h-full flex-col border border-acid/50 bg-panel p-4">
+              <p className="font-mono text-[0.58rem] tracking-[0.2em] text-acid uppercase">
+                MODULE_04 // THREATS
+              </p>
+              <h2 className="mt-2 font-display text-2xl font-bold tracking-[0.02em] uppercase">
+                THREAT SYSTEM
+              </h2>
+              <p className="mt-2 font-body text-sm leading-snug text-muted">
+                Viewport-space red squares and orange triangles, a fixed 20 ms step,
+                collision/damage, and a pooled DOM layer.
+              </p>
+              <div className="mt-auto pt-4">
+                <span className="inline-block border border-acid px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-acid uppercase">
+                  SLICE 03
+                </span>
+              </div>
+            </article>
+
+            <article className="flex h-full flex-col border border-cyan/50 bg-panel p-4">
+              <p className="font-mono text-[0.58rem] tracking-[0.2em] text-cyan uppercase">
+                MODULE_05 // RUN CONTROL
+              </p>
+              <h2 className="mt-2 font-display text-2xl font-bold tracking-[0.02em] uppercase">
+                PAUSE + RUN-OVER
+              </h2>
+              <p className="mt-2 font-body text-sm leading-snug text-muted">
+                Native pause rail with config, portrait freeze, run-exit confirmations, and the
+                commit-state run-over.
+              </p>
+              <div className="mt-auto pt-4">
+                <span className="inline-block border border-cyan px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-cyan uppercase">
+                  SLICE 04
+                </span>
+              </div>
+            </article>
+
+            <article className="flex h-full flex-col border border-acid/50 bg-panel p-4">
+              <p className="font-mono text-[0.58rem] tracking-[0.2em] text-acid uppercase">
+                MODULE_06 // PROGRESSION
+              </p>
+              <h2 className="mt-2 font-display text-2xl font-bold tracking-[0.02em] uppercase">
+                LOCAL PROGRESSION
+              </h2>
+              <p className="mt-2 font-body text-sm leading-snug text-muted">
+                A v1 local save with blue points, best time, and run count, plus a read-only locked
+                skill-tree preview.
+              </p>
+              <div className="mt-auto pt-4">
+                <span className="inline-block border border-acid px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-acid uppercase">
+                  SLICE 05
+                </span>
+              </div>
             </article>
           </div>
         </section>

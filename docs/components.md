@@ -34,14 +34,14 @@ responsive.
 
 ## Feature screens
 
-| Screen           | Path                                          | State / notes                                                                   |
-| ---------------- | --------------------------------------------- | ------------------------------------------------------------------------------- |
-| `TitleScreen`    | `src/features/title/title-screen.tsx`         | Yellow hero, entry CTAs (`INITIALIZE`, `SKILL TREE`, `CONFIGURE`), module strip |
-| `HeroArt`        | `src/features/title/hero-art.tsx`             | Original abstract SVG hero composition                                          |
-| `PlayScreen`     | `src/features/play/play-screen.tsx`           | Full-bleed run board; gate, run loop, HUD, enemies, pause, run-over             |
-| `SettingsScreen` | `src/features/settings/settings-screen.tsx`   | Reduced motion; glow intensity + static preview; reset; layout header           |
-| `SkillsScreen`   | `src/features/skills/skills-screen.tsx`       | Saved progression read states, locked 3 × 3 map, reserved boss rows; no writes  |
-| `NotFoundScreen` | `src/features/not-found/not-found-screen.tsx` | Yellow 404 fallback with glitch display; layout header                          |
+| Screen           | Path                                          | State / notes                                                                                       |
+| ---------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `TitleScreen`    | `src/features/title/title-screen.tsx`         | Yellow hero, entry CTAs (`INITIALIZE`, `SKILL TREE`, `CONFIGURE`), development-history module strip |
+| `HeroArt`        | `src/features/title/hero-art.tsx`             | Original abstract SVG hero composition                                                              |
+| `PlayScreen`     | `src/features/play/play-screen.tsx`           | Full-bleed run board; gate, run loop, HUD, enemies, pause, run-over                                 |
+| `SettingsScreen` | `src/features/settings/settings-screen.tsx`   | Reduced motion; glow intensity + static preview; reset; layout header                               |
+| `SkillsScreen`   | `src/features/skills/skills-screen.tsx`       | Saved progression read states, locked 3 × 3 map, reserved boss rows; no writes                      |
+| `NotFoundScreen` | `src/features/not-found/not-found-screen.tsx` | Yellow fallback with glitched, briefly flipping 404; layout header                                  |
 
 Settings state is feature-owned:
 
@@ -178,7 +178,8 @@ positive balance offers `BACK TO TITLE`.
   two-step reset.
 - `settings-storage` covers v1 → v2 migration, glow normalization, malformed-record fallback, and
   save output.
-- `App` covers root, settings, skills, play, and unknown-route rendering with clean URLs.
+- `App` covers root, settings, skills, play, and unknown-route rendering with clean URLs, including
+  the title's development-history module strip.
 - `LandscapeGate` and `PlayScreen` cover portrait blocking, the mounted run behind the gate, the
   pause menu, focus freeze, pause/restart/resume, portrait return, and the run-over mount.
 - `RunHud` covers the timer, points, timeline geometry/state, hidden list, boss banner, glow tokens,

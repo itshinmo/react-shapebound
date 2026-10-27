@@ -265,9 +265,11 @@ the page is identical under reduced motion.
 
 - Standard transition: 150ms, `ease-snap`, color/border/shadow/transform/translate only.
 - Ambient: `animate-drift` (grid), `animate-pulse-line` (status dots), rare `animate-flicker`.
-- The hero `SHAPE` word uses `animate-glitch`: a 6-second discrete loop with brief cyan/red
-  split-and-translate bursts. `BOUND` and other display type stay static; do not animate other
-  giant type continuously.
+- The hero `SHAPE` word and the 404 heading use `animate-glitch`: a 6-second discrete loop with
+  brief cyan/red split-and-translate bursts. The 404 heading also uses `animate-glitch-flip`, a
+  9-second cycle of irregular, split-second `scaleX(-1)` snaps; the flip is on the heading and the
+  glitch is on an inner layer so the transforms compose. `BOUND` and other display type stay
+  static; do not animate other giant type continuously.
 - Respect both `prefers-reduced-motion` and `html[data-reduced-motion='true']`. The reduce-motion
   switch thumb keeps its 150ms transition in both directions as state feedback; all other
   transitions and animations are disabled.
