@@ -1,6 +1,6 @@
 ---
-description: What react-shapebound is, the stack, and where project knowledge lives. Read first in every session.
-last-verified: 2026-10-23
+description: What react-shapebound is, the stack, current slice, and where project knowledge lives. Read first in every session.
+last-verified: 2026-10-27
 ---
 
 # Overview
@@ -10,12 +10,16 @@ game is rendered with HTML and CSS — no canvas, no WebGL, no backend.
 
 - Stack: React 19, TypeScript 6 (strict), Vite 8, React Router 8 (declarative + `BrowserRouter`),
   Tailwind CSS 4, and bundled OFL fonts (Anton, Chakra Petch, Rajdhani, JetBrains Mono).
-- Persistence: `localStorage`, versioned save envelope, local settings.
-- Testing: Vitest + Testing Library. Quality gate: ESLint + Prettier + `tsc` + Vitest.
-- Current state: first playable movement slice. `/play` is landscape-only with a square player
-  confined to a static outlined container, keyboard movement, a touch joystick, and a pure player
-  domain; title and settings are responsive. Combat, enemies, points, bosses, the node tree, death,
-  and the HUD are not built. The provisional vision is in `docs/game-design.md`.
+- Persistence: `localStorage`. Settings v2 holds reduced motion and glow intensity. The v1
+  `shapebound:save` record holds blue points, best time, run count, and three reserved boss
+  currencies, committed once at death. There is no active-run save.
+- Testing: Vitest + Testing Library. Quality gate: ESLint + Prettier + `tsc` + Vitest + docs links.
+- Current state: **survival run slice**. Five routes (`/`, `/play`, `/settings`, `/skills`, `*`).
+  `/play` is landscape-only: a square player in a static outlined container, a run HUD and timeline,
+  red-square and orange-triangle threats, pause, death, and a run-over. `/skills` is a read-only
+  locked preview of saved progression. Boss fights/currencies, node spending, player attack, a win
+  condition, and active-run persistence are not built. The provisional vision is in
+  `docs/game-design.md`.
 
 ## Where knowledge lives
 

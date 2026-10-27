@@ -1,6 +1,6 @@
 ---
-description: Layer boundaries, routing, state/persistence shape, and deliberate constraints. Read before adding modules, changing state, or moving code.
-last-verified: 2026-10-23
+description: Layer boundaries, routing, state/persistence shape, run lifecycle, and deliberate constraints. Read before adding modules, changing state, or moving code.
+last-verified: 2026-10-27
 ---
 
 # Architecture memory
@@ -9,8 +9,8 @@ last-verified: 2026-10-23
 
 ```text
 src/app       composition root: router, shell, presentation layout, error boundary, providers
-src/features  screens and feature-owned state (title, play, settings, not-found; play owns the gate)
-src/game      pure domain: RNG, save envelope, player rules
+src/features  screens and feature-owned state (title, play, settings, skills, not-found; play owns the run loop and gate)
+src/game      pure domain: RNG, save envelope, player, run, timeline, progression, enemy rules
 src/shared    cross-cutting primitives: UI, storage, config
 src/styles    Tailwind entry, theme tokens, base layer, custom utilities
 ```
@@ -23,57 +23,80 @@ Enforced by `eslint.config.js` (`import-x/no-restricted-paths`, restricted impor
 ## Routing
 
 - `BrowserRouter` + declarative `<Routes>` in `src/app/app.tsx`.
-- Routes: `/` title, `/play` landscape movement board, `/settings`, `*` not-found.
+- Routes: `/` title, `/play` landscape survival run, `/settings`, `/skills`, `*` not-found.
 - Clean URLs are deliberate (ADR-010). Static hosts need an `index.html` fallback; subpath hosting
   needs matching Vite `base` and router `basename`. `PresentationLayout` renders `SiteHeader` once
   and routes presentation pages through `<Outlet />`; `/play` is outside it and headerless.
+- `/settings` and `/skills` use the dark route field; the title stays yellow.
+- `/skills` is a read-only presentation page. It reads the save through
+  `src/features/play/progression-storage.ts` and never writes, spends, or unlocks anything; the map is
+  a locked generic 3 × 3 preview.
 
-## Settings
+## Settings and save
 
 - `src/features/settings/` owns the context, provider, storage, and screen.
 - `SettingsProvider` wraps the router in `src/app/app.tsx`.
 - Settings schema v2 persists reduced motion and glow intensity (0–100). v1 records migrate on read
   with `glowIntensity: 100`.
 - Reduced motion is mirrored to `document.documentElement.dataset.reducedMotion`; glow intensity is
-  mirrored to the `--glow-intensity` custom property. Only play glow utilities and the static
-  settings preview consume it; interface glows stay fixed.
+  mirrored to the `--glow-intensity` custom property. Every in-run surface and the shared static
+  `GlowPreview` consume it; presentation pages keep fixed glows (ADR-015).
+- `shapebound:save` is the v1 progression record: `bluePoints`, `bestTimeMs`, `runCount`, and
+  `bossCurrencies` (`purple`, `green`, `orange`). All fields are required. `none` = zero base;
+  `valid` = stored; `unreadable` = terminal, blocks overwrite; `unavailable` = terminal, no write.
+  A failed write retries the same latched envelope. Commit once at death (ADR-011).
+- `/settings` reset removes both keys and rewrites settings defaults. The pause config writes
+  settings only.
+- There is no active-run save. Reload, back, route change, Restart, and Retry discard the run; the
+  seed, clock, points, enemy world, and commit latch are in memory only.
 
 ## Game domain
 
 - `src/game/rng.ts` — seeded mulberry32 `Rng`; all randomness goes through it.
 - `src/game/save.ts` — generic `SaveEnvelope<T>`, parse/serialize, schema versioning.
-- `src/game/player.ts` — player stats/state, base stats, `PLAYER_CONTAINER_SIZE` (320, `[unverified]`),
-  movement, container bounds, health/shield, damage order. `dtSeconds` is injected; no randomness.
-- The play feature owns the rAF loop, input, bounds measurement, and DOM transform writes. There is
-  no run save yet.
-- Time, randomness, and persistence are inputs/ports; the domain never reaches for them.
+- `src/game/player.ts` — player stats/state, `PLAYER_CONTAINER_SIZE` (320, `[unverified]`), movement,
+  container bounds, health/shield, damage order.
+- `src/game/run.ts` — active-time run, points at 1/sec, `mm:ss:cc`, 300 000 ms boss markers,
+  stacked freeze set (`pause`, `hidden`, `portrait`, `focus`), death, and commit status.
+- `src/game/timeline.ts` — 320 px / 600 000 ms window, 160 px playhead, start and five-minute boss
+  nodes, past/current/future.
+- `src/game/progression.ts` — payload validation and commit arithmetic; no boss currency is awarded
+  or spent.
+- `src/game/enemy-*` — viewport-space world, 20 ms fixed step, 24-slot pool, caps/skip policy,
+  collision/damage, red square and orange triangle rules (ADR-012).
+- The play feature owns the rAF loop (50 ms clamp, retained remainder, 20 ms accumulator), input,
+  bounds measurement, HUD/enemy DOM writes, freeze listeners, and the one death-commit effect.
+- Bosses are markers only. There is no player attack, boss entity/fight/defeat, currency award, node
+  spending, win condition, or active-run persistence.
 
 ## Landscape and input
 
-- The play screen is landscape-only; title, settings, and not-found are responsive. `LandscapeGate`
-  wraps only `PlayScreen` and replaces the play surface with a rotate overlay in portrait. See
-  ADR-009.
+- The play screen is landscape-only; title, settings, skills, and not-found are responsive.
+  `LandscapeGate` overlays the still-mounted play surface and adds `portrait`; returning to landscape
+  removes it, adds `pause`, and opens the pause menu once. No auto-resume, no respawn (ADR-013).
 - Touch `/play` shows a one-tap start overlay that requests fullscreen and attempts
   `screen.orientation.lock('landscape')`. Failure is non-blocking. iOS/Safari cannot lock; the gate is
   the fallback.
-- Keyboard: WASD/arrows. Touch: pointer-driven joystick, touch/pen only, hidden on release. Player
-  position and joystick knob are written via refs, not per-frame React state.
+- Keyboard: WASD/arrows; Escape opens pause when active. Touch: pointer-driven joystick, touch/pen
+  only, hidden on release. Player position and joystick knob are written via refs, not per-frame
+  React state.
 - A static, outline-only container (320 px `[unverified]`) is centered in the safe playfield. The
-  player is clamped to its inner bounds; the screen is not a collision boundary. Container size is a
-  future skill-tree upgrade. See ADR-009.
-- The play surface is full-bleed black with a faint grid, no header, and no HUD. The scanline overlay
-  is hidden on `/play`.
+  player is clamped to its inner bounds; the screen is not a collision boundary. Enemies live in
+  viewport space and ignore the arena outline. Container size is a future skill-tree upgrade.
+- The play surface is full-bleed black with a faint grid, no header, and a HUD overlay that reserves
+  no band. The scanline overlay is hidden on `/play`.
 
 ## Deliberate constraints — do not “fix”
 
 - **No canvas/WebGL.** DOM-only is an accessibility and testability decision (ADR-002).
-- **Clean URLs need a host fallback.** BrowserRouter is intentional; configure SPA history fallback
-  (ADR-010).
-- **No state library yet.** Reducer + context until measured need (ADR-003).
+- **Clean URLs need a host fallback.** BrowserRouter is intentional (ADR-010).
+- **No state library yet.** Feature state + pure functions until measured need (ADR-003).
 - **No runtime network.** Offline is a product requirement (ADR-001).
 - **No CSS Modules.** Tailwind + theme tokens is the styling system (ADR-005).
-- **Landscape-only play surface.** No portrait play layout, header, or HUD without a design pass
-  (ADR-009). Presentation pages stay responsive. The player is bounded by the container, not the
-  screen.
+- **Landscape-only play surface.** No portrait play layout or header. The HUD is in-run only.
+- **Commit once at death, never continuous.** A run is in memory; an active-run save is a new scope
+  decision (ADR-011).
+- **Glow scope follows the run boundary.** In-run surfaces react to the slider; presentation pages
+  and focus rings do not (ADR-015).
 
 See `docs/decisions-not-to-fix.md` for the maintained list.

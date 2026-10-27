@@ -59,12 +59,24 @@ Local data lives in `localStorage`:
 
 ```text
 shapebound:settings   { version: 2, reducedMotion: boolean, glowIntensity: 0-100 }
-shapebound:save       { schemaVersion: 1, savedAt: ISO string, data: T }
+shapebound:save       { schemaVersion: 1, savedAt: ISO string, data: ProgressionData }
 ```
 
-Version 1 settings records are migrated on read with `glowIntensity: 100` and rewritten as version 2.
-Glow intensity only changes the play-field player, arena, and joystick glows; the static settings
-preview mirrors it. Interface glows are fixed.
+`ProgressionData` is exactly `{ bluePoints, bestTimeMs, runCount, bossCurrencies: { purple, green,
+orange } }`. It is the progression record, not an active run: the current seed, clock, points, enemy
+state, and commit latch are in memory only. There is no mid-run save or resume.
+
+- **Missing key** (`none`): base values are all zero. This is not an error. The first committed death
+  writes a fresh record, even for a zero-point run.
+- **Valid record**: the saved balance, best time, run count, and boss currencies are used.
+- **Unreadable record** (`invalid-json`, `invalid-envelope`, `invalid-data`, or
+  `unsupported-version`): nothing is written or overwritten, and the run-over offers `/settings` as
+  the recovery route. Later deaths remain unreadable until the record is cleared.
+- **Storage unavailable**: the browser is blocking storage. Nothing is written; `/settings` reset
+  cannot repair an absent storage API, so it is not presented as the fix.
+- **Failed write** after a valid read: the run-over shows `SAVE FAILED — POINTS NOT SAVED` and a
+  `Retry save` control. Retry writes the same latched envelope; it never adds the run twice. Leaving
+  discards the unsaved points.
 
 To recover:
 
@@ -72,9 +84,12 @@ To recover:
 2. Or remove the two keys in DevTools → Application → Local Storage.
 3. Reload.
 
-A failed write (quota, private mode) is reported as `false` and does not crash the app; the session
-continues without persistence. The settings provider resets to system defaults and writes them again
-after a reset.
+A reset removes both `shapebound:settings` and `shapebound:save`, resets settings to system defaults,
+writes the settings defaults again, and leaves the save key absent. `/skills` then shows the zero
+base and the next committed death writes a fresh v1 record. The pause-menu config cannot reset local
+data. A failed settings write (quota, private mode) is reported as `false` and does not crash the app;
+the session continues without persistence. Version 1 settings records are migrated on read with
+`glowIntensity: 100` and rewritten as version 2.
 
 ## Troubleshooting
 
@@ -96,20 +111,28 @@ works without it; add imports through the `@/` alias.
 **Fonts look wrong or missing.** Fonts are imported from `@fontsource/*` in `src/main.tsx` and emitted
 into `dist/assets`. Do not replace them with a Google Fonts URL — that breaks the offline rule.
 
-**Storage is unavailable.** Private/locked-down contexts can throw on access. The app falls back to
-defaults and skips persistence; this is expected, not a crash.
+**Storage is unavailable.** Private/locked-down contexts can throw on access. Settings fall back to
+system defaults and skip persistence; the progression read is `unavailable`, so a death writes
+nothing and the run-over says the run was not saved. This is expected, not a crash. A reset cannot
+repair an absent storage API.
 
 **Glow intensity does not change the header, buttons, or panels.** That is intentional. The setting
-drives only `glow-arena`, `glow-player`, and `glow-joystick` on the play field, plus the static
-settings preview. Interface chrome keeps its fixed `shadow-glow-*` tokens.
+drives every in-run surface: `glow-arena`, `glow-player`, `glow-joystick`, `glow-enemy` (both enemy
+bodies), `glow-warning` (warning lane and beam), `glow-track` (timeline line and future/current
+nodes), `glow-hud` (boss banner and pause connector), `glow-danger` (run-over panel), plus the static
+settings/pause preview. The HUD timer/points/legend/scrim, menu button, pause dialog frame/buttons,
+and all focus rings stay fixed or unglowed. Presentation pages keep fixed `shadow-glow-*` tokens and
+never read the variable.
 
 **The reduce-motion switch still moves while reduced motion is on.** Its 150ms thumb feedback is the
 sole exception; the control's position is its state feedback. All other animations and transitions
 are disabled.
 
 **A rotate-to-landscape screen blocks the game.** This is intentional on `/play`. The title,
-settings, and not-found pages are responsive and do not require landscape. Rotate the device or widen
-the window; the play surface remounts when landscape returns.
+settings, skills, and not-found pages are responsive and do not require landscape. Rotate the device
+or widen the window. The run stays mounted and frozen behind the gate; on return to landscape the
+gate disappears, the pause menu opens once, and the run waits for Resume. It does not respawn or
+auto-resume.
 
 **Fullscreen or orientation lock does not happen.** On touch devices, `/play` shows a start overlay;
 the tap is the required user gesture for fullscreen and `screen.orientation.lock('landscape')`.
@@ -124,9 +147,41 @@ subpath deployment, set Vite `base` and the router `basename` together.
 does not create one; a second simultaneous touch is ignored. Releasing or cancelling the pointer
 hides it and zeroes movement. It also clears on window blur or a hidden tab.
 
-**The player resets after rotating to portrait.** The play gate replaces the play surface, so it
-unmounts. This slice has no saved run state; the player respawns centered. Revisit the gate when run
-state becomes persistent.
+**The run keeps freezing, or the pause menu opens by itself.** Freeze reasons stack: `pause`,
+`hidden`, `portrait`, and `focus`. The pause button or Escape adds `pause`; only Resume removes it. A
+hidden tab adds `hidden`; window blur while the document is visible adds `focus`. Neither opens a
+menu, and both resume only when no other reason remains. Portrait adds `portrait`; returning to
+landscape removes it, adds `pause`, and opens the menu once. The pause config keeps the run frozen
+while settings change. The run-over is terminal; rotating after death shows the gate and then the
+run-over, with no pause reason.
+
+**The player resets after reloading, pressing back, or leaving `/play`.** That is expected: there is
+no active-run save. Reload, browser back, route change, Restart, and Retry discard the run. Portrait,
+a hidden tab, and focus loss preserve the in-memory run while the page stays mounted; they are not
+persistence.
+
+**A death says the points were not saved.** Read the run-over status. `failed` is a write failure;
+`Retry save` retries the same latched total and never adds it twice. `unreadable` means the existing
+save is corrupt and nothing was overwritten; open Settings to reset local data, then the next death
+can write a fresh record. `unavailable` means the browser is blocking storage; a reset cannot repair
+that. `pending` is the commit in progress. See [Save recovery](#save-recovery).
+
+**`/skills` shows no points after a completed run.** The page reads only the committed save. A
+missing record, a failed/unreadable/unavailable commit, or a run that was restarted before death
+leaves no new balance. Check the run-over status first. `/skills` never shows the current run's
+unsaved points. Its `START A RUN` footer link appears only for a readable zero balance; with a
+positive balance, start a run from the header or title.
+
+**`/skills` shows zero best time or run count with a zero balance.** The empty state is not an
+error. Best time and run count remain the real saved values even when the blue balance is zero. A
+reset clears both keys, so all three return to zero.
+
+**The Skill Tree item in the pause menu does nothing.** It is intentionally locked during a run
+(`aria-disabled`, reason `AVAILABLE AFTER THE RUN`). Finish the run or leave to `/skills`.
+
+**The boss banner appears but no boss does.** The five-minute banner is a marker only. There is no
+boss entity, fight, attack, health, defeat, or currency award in this slice; the run continues
+through the banner.
 
 **The player container is off-screen or the wrong size.** The player container is a static, centered
 square (`PLAYER_CONTAINER_SIZE` in `src/game/player.ts`, currently 320 px). The screen is not a
@@ -135,8 +190,8 @@ starting size or the supported landscape viewport floor. The player should stop 
 outline; if it crosses, the container bounds are wrong.
 
 **Testing landscape on desktop.** Use DevTools device emulation or resize the window. On `/play`, a
-portrait viewport should show the blocking overlay; the title and settings should stay usable in both
-orientations. There is no E2E suite yet.
+portrait viewport should show the blocking overlay while the run stays mounted and frozen; the title,
+settings, and skills pages should stay usable in both orientations. There is no E2E suite yet.
 
 **Windows symlink adapters.** `.claude`, `.opencode`, and `.agents` point into `.ai/`. Enable
 `core.symlinks` (`git config --global core.symlinks true`) or replace each symlink with a one-line
@@ -167,9 +222,11 @@ pointer file. Do not copy the contents.
 
 ## Not included yet
 
+- Boss entities, boss fights, boss attacks, boss health, boss defeat, and boss currency awards.
+- Node unlocking, upgrades, costs, respec, and spending.
+- Player attack, aiming, enemy health, and a win condition.
+- Active-run persistence, mid-run save, resume, run history, and a saved run seed/cursor.
 - PWA/service worker and install prompt.
 - E2E browser tests.
-- Audio.
+- Audio and haptics.
 - Save-slot UI.
-- HUD, pause, and a visible exit control.
-- Combat, enemies, bosses, points, the skill tree, and run/death progression.
