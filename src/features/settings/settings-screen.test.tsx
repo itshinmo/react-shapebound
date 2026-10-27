@@ -31,6 +31,19 @@ describe('SettingsScreen', () => {
     const slider = screen.getByRole('slider', { name: /glow intensity/i });
     expect(slider).toHaveValue('100');
     expect(screen.getByText(/static preview/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Adjust the glow on every in-run surface: the play field, enemies, warnings, timeline, boss banner, pause menu, and run-over. Presentation pages keep fixed glows.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('IN-RUN GLOW ONLY. PRESENTATION PAGES STAY FIXED.'),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('glow-preview')).toBeInTheDocument();
+    expect(screen.getByTestId('glow-preview-enemy')).toBeInTheDocument();
+    expect(screen.getByTestId('glow-preview-warning')).toBeInTheDocument();
+    expect(screen.getByTestId('glow-preview-timeline')).toBeInTheDocument();
+    expect(screen.getByTestId('glow-preview-boss')).toBeInTheDocument();
 
     fireEvent.change(slider, { target: { value: '40' } });
 
