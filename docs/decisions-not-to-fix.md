@@ -5,12 +5,15 @@ doc update.
 
 ## 1. Clean URLs require a static-host fallback
 
-**Why:** the author requires clean paths (`/play`, not `/#/play`). The app uses `BrowserRouter`;
-Vite dev and preview provide history fallback, but a static host must serve `index.html` for unknown
-paths. Subpath hosting also needs matching Vite `base` and router `basename`. See
-[ADR-010](../decisions/ADR-010-clean-browser-urls.md).
+**Why:** the author requires clean paths (`/play`, not `/#/play`). The app uses `BrowserRouter`; Vite
+dev and preview provide history fallback, but a static host must serve `index.html` for unknown
+paths. Subpath hosting also needs matching Vite `base` and router `basename`. GitHub Pages cannot
+return a 200 for a deep link, so the deploy workflow copies `index.html` to `404.html`; the app boots
+but the first response is HTTP 404. See [ADR-010](../decisions/ADR-010-clean-browser-urls.md) and
+[ADR-016](../decisions/ADR-016-github-pages-deployment.md).
 
-**Do not** switch back to `HashRouter` or add hash URLs without an ADR.
+**Do not** switch back to `HashRouter` without an ADR. Hash routing ignores the pathname, so
+arbitrary paths such as `/ax#/skills` render app routes; that was rejected after review.
 
 ## 2. No canvas, even for effects
 

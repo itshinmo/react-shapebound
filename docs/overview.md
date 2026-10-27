@@ -8,7 +8,7 @@ with HTML and CSS — no canvas, no WebGL, no backend.
 
 The project has a **survival run slice**, not a complete game. What exists:
 
-- Five clean routes: title, play, settings, skills, and not-found. `PresentationLayout` renders the
+- Five routes: title, play, settings, skills, and not-found. `PresentationLayout` renders the
   shared black/acid `SiteHeader` once for the presentation pages; the play screen is outside it and
   headerless.
 - A full-viewport, landscape-only play board with a square player, a static outlined player
@@ -52,9 +52,11 @@ pnpm preview    # http://localhost:4173
 ```
 
 There is no server process, database, API, or runtime network call. `dist/` is a static bundle.
-`BrowserRouter` gives clean paths; Vite dev/preview provide history fallback. A static host must serve
-`index.html` for unknown paths, and a subpath deployment must pair Vite `base` with the router
-`basename`.
+Routes are clean paths with `BrowserRouter` and a basename derived from `VITE_BASE`; a static host
+must serve `index.html` for unknown paths. GitHub Pages cannot return a 200 for a deep link, so the
+deploy workflow copies `index.html` to `404.html`; the app boots with an HTTP 404 on the first
+request. GitHub Pages deploys the build artifact published on pushes to `main` by
+`.github/workflows/deploy.yml`; the workflow also refreshes a `gh-pages` snapshot.
 
 ## Where things live
 

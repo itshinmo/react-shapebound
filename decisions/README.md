@@ -37,9 +37,10 @@ belongs in `docs/`.
 | [ADR-007](ADR-007-landscape-only-play-surface.md)            | Landscape-only play surface and best-effort orientation lock   | Superseded by ADR-008                   | play surface / platform              |
 | [ADR-008](ADR-008-responsive-presentation-landscape-play.md) | Responsive presentation, landscape-only play screen            | Superseded by ADR-009                   | routing / orientation                |
 | [ADR-009](ADR-009-static-player-container.md)                | Static outlined player container as the play boundary          | Accepted                                | game domain / play surface           |
-| [ADR-010](ADR-010-clean-browser-urls.md)                     | Clean browser URLs with a static-host fallback                 | Accepted                                | routing / static hosting             |
+| [ADR-010](ADR-010-clean-browser-urls.md)                     | Clean browser URLs with a static-host fallback                 | Accepted (amended by ADR-016)           | routing / static hosting             |
 | [ADR-011](ADR-011-progression-save-v1.md)                    | Progression save v1 and unreadable-save policy                 | Accepted                                | game domain / persistence            |
 | [ADR-012](ADR-012-viewport-enemy-simulation.md)              | Viewport-space enemy simulation with pure fixed-step pools     | Accepted                                | game domain / rendering              |
 | [ADR-013](ADR-013-portrait-pause.md)                         | Portrait pause preserves the active run                        | Accepted                                | play surface / run lifecycle         |
 | [ADR-014](ADR-014-semantic-run-colors.md)                    | Semantic blue/purple/green/glow extension                      | Superseded by ADR-015 (glow scope only) | design system / visual identity      |
 | [ADR-015](ADR-015-in-run-glow-scope.md)                      | In-run glow scope and intensity utilities                      | Accepted                                | design system / glow / accessibility |
+| [ADR-016](ADR-016-github-pages-deployment.md)                | GitHub Pages deployment via Actions artifact and snapshot      | Accepted                                | deployment / static hosting          |

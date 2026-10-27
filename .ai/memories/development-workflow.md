@@ -1,6 +1,6 @@
 ---
 description: Commands, approval gate, spec threshold, role handoffs, and handoff checks. Read before starting and before finishing.
-last-verified: 2026-10-21
+last-verified: 2026-10-27
 ---
 
 # Development workflow memory
@@ -14,7 +14,8 @@ pnpm test       pnpm check      pnpm verify
 ```
 
 `pnpm check` = format:check + lint + typecheck + test + docs:check. `pnpm verify` adds the production
-build. The pre-push hook runs `pnpm check`; CI runs check + build.
+build. The pre-push hook runs `pnpm check`; CI runs check + build. Pushes to `main` also deploy the
+Pages artifact and refresh the best-effort `gh-pages` snapshot from `.github/workflows/deploy.yml`.
 
 ## Approval gate
 

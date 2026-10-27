@@ -5,6 +5,7 @@
 - **Topic:** routing / static hosting
 - **RFC:** —
 - **Supersedes:** [ADR-001](ADR-001-vite-react-spa.md)
+- **Amended by:** [ADR-016](ADR-016-github-pages-deployment.md) — `VITE_BASE` base/basename pairing and the GitHub Pages `404.html` fallback
 
 ## Context
 

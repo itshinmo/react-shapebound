@@ -10,12 +10,15 @@ import { TitleScreen } from '@/features/title/title-screen';
 import { AppErrorBoundary } from './app-error-boundary';
 import { AppShell } from './app-shell';
 import { PresentationLayout } from './presentation-layout';
+import { getRouterBasename } from './router-basename';
+
+const basename = getRouterBasename(import.meta.env.BASE_URL);
 
 export function App() {
   return (
     <AppErrorBoundary>
       <SettingsProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={basename}>
           <AppShell>
             <Routes>
               <Route element={<PresentationLayout />}>

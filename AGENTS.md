@@ -11,7 +11,8 @@ their contents here.
 author. An approval covers the reviewed diff only.
 
 Do not create a GitHub release, deploy, or publish anything unless explicitly asked. There is no
-backend and no publishing pipeline to run.
+backend; GitHub Pages is deployed by `.github/workflows/deploy.yml`, which also maintains a
+`gh-pages` snapshot.
 
 ## What this project is
 
@@ -125,12 +126,12 @@ column, review the right column **in the same change**.
 | save schema, migrations, or storage keys       | `docs/architecture.md#settings-and-local-state`, `docs/architecture.md#future-save-migrations`, `docs/runbook.md#save-recovery`, `decisions/ADR-011`, `src/game/save.test.ts` |
 | colors, type, spacing, motion, or utilities    | `docs/design-system.md`, `src/styles/global.css`, `decisions/ADR-014`, `decisions/ADR-015`, `.ai/memories/conventions.md`                                                     |
 | a dependency                                   | `docs/dependency-candidates.md`; an ADR for runtime `dependencies`; `README.md` stack; `AGENTS.md` commands                                                                   |
-| scripts, commands, or build config             | `AGENTS.md`, `README.md`, `docs/runbook.md`, `.github/workflows/ci.yml`                                                                                                       |
+| scripts, commands, or build config             | `AGENTS.md`, `README.md`, `docs/runbook.md`, `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`                                                                       |
 | ESLint, TypeScript, Prettier, or Vitest config | `docs/architecture.md#quality-gates`, `.ai/memories/conventions.md`                                                                                                           |
 | layer boundaries or import rules               | `eslint.config.js`, `docs/architecture.md#layers`, `.ai/memories/architecture.md`                                                                                             |
 | agent, skill, or template                      | `.ai/README.md`, `CONTRIBUTING.md`                                                                                                                                            |
 | title, tagline, or version                     | `src/shared/config/app-config.ts`, `index.html`, `README.md`                                                                                                                  |
-| deployment or static hosting                   | `docs/runbook.md`, `README.md`, `.github/workflows/ci.yml`                                                                                                                    |
+| deployment or static hosting                   | `docs/runbook.md`, `README.md`, `.github/workflows/deploy.yml`, `decisions/ADR-016-github-pages-deployment.md`                                                                |
 | accessibility behavior                         | `docs/design-system.md#accessibility`, the non-negotiables below                                                                                                              |
 
 ## Non-negotiables

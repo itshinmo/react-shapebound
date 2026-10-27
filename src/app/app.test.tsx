@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './app';
@@ -36,6 +36,26 @@ describe('App routing', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { level: 1, name: /shapebound/i })).toBeInTheDocument();
+  });
+
+  it('does not treat an unknown path as a hash route', () => {
+    window.history.replaceState({}, '', '/ax#/skills');
+
+    render(<App />);
+
+    expect(screen.getByText(/signal lost/i)).toBeInTheDocument();
+  });
+
+  it('keeps the skip link out of the route path', () => {
+    window.history.replaceState({}, '', '/missing');
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('link', { name: /skip to content/i }));
+
+    expect(window.location.pathname).toBe('/missing');
+    expect(window.location.hash).toBe('');
+    expect(screen.getByRole('main')).toHaveFocus();
   });
 
   it('renders the shared header on settings', () => {

@@ -87,10 +87,16 @@ rfcs/         proposals
 
 ## Offline and hosting
 
-No runtime network calls; fonts are bundled. `base: './'` keeps asset URLs relative. Routes are clean
-paths with `BrowserRouter`; a static host must serve `index.html` for unknown paths. For a subpath
-deployment, set Vite `base` and the router `basename` together. Offline currently means “no network
-after load”; a PWA is not included. Serve the build over HTTP (`pnpm preview`), not `file://`.
+No runtime network calls; fonts are bundled. Routes are clean paths with `BrowserRouter`; the router
+`basename` and Vite `base` both come from `VITE_BASE`, which is `/` locally and
+`/react-shapebound/` in the deploy build. A static host must serve `index.html` for unknown paths;
+GitHub Pages cannot return a 200 for a deep link, so the deploy workflow copies `index.html` to
+`404.html`. The app still boots, but the first request is HTTP 404. The production build is deployed
+to GitHub Pages by `.github/workflows/deploy.yml` on every push to `main` (and manual dispatch from
+`main`). The workflow uploads the Pages artifact and also force-pushes a fresh `gh-pages` snapshot;
+set the Pages source to **GitHub Actions** once. The site is
+<https://itshinmo.github.io/react-shapebound/>. Offline currently means “no network after load”; a
+PWA is not included. Serve the build over HTTP (`pnpm preview`), not `file://`.
 
 ## AI-assisted workflow
 
