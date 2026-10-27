@@ -59,10 +59,14 @@ it around the router. Features must not import the app root.
 | `/skills`   | `SkillsScreen`   | Saved progression and the locked node-map preview          |
 | `*`         | `NotFoundScreen` | Route fallback                                             |
 
-Clean URLs are deliberate ([ADR-010](../decisions/ADR-010-clean-browser-urls.md)). Vite dev and
-preview provide history fallback; a static host must serve `index.html` for unknown paths with a 200
-response. For a subpath deployment, set Vite `base` and `BrowserRouter` `basename` together.
-`base: './'` keeps assets relative, but direct deep links still depend on the host fallback.
+Clean URLs are deliberate ([ADR-010](../decisions/ADR-010-clean-browser-urls.md)). The router
+`basename` is derived from `import.meta.env.BASE_URL`; Vite `base` is `/` locally and
+`/react-shapebound/` in the deploy build. A static host must serve `index.html` for unknown paths.
+GitHub Pages cannot return a 200 for a deep link, so the deploy workflow copies `dist/index.html` to
+`dist/404.html`; the app boots but the first response is HTTP 404
+([ADR-016](../decisions/ADR-016-github-pages-deployment.md)). The `#main-content` skip link is an
+in-page fragment handled by `AppShell`, not a route. GitHub Pages deploys the build artifact
+published by `.github/workflows/deploy.yml`; the same workflow also refreshes a `gh-pages` snapshot.
 
 `AppShell` renders a skip control, the single `<main id="main-content">`, a scanline overlay, and
 moves focus to main on route changes. The scanline overlay is hidden on `/play` so the play surface
@@ -303,6 +307,10 @@ pnpm verify       # check + production build
 
 - `.githooks/pre-push` runs `pnpm check`. `pnpm install` sets `core.hooksPath` via `prepare`.
 - CI (`.github/workflows/ci.yml`) runs `pnpm verify`.
+- Deployment (`.github/workflows/deploy.yml`) runs `pnpm check` and `pnpm build` with
+  `VITE_BASE=/react-shapebound/` on pushes to `main` (and manual dispatch from `main`), copies
+  `index.html` to `404.html`, uploads `dist/` as the Pages artifact, deploys it with
+  `actions/deploy-pages`, and force-pushes a fresh `gh-pages` snapshot.
 - Boilerplate: tests are colocated, RTL queries prefer roles/labels, and new domain logic needs unit
   tests.
 
@@ -324,7 +332,7 @@ pnpm verify       # check + production build
 
 ## Decisions not to “fix”
 
-See `docs/decisions-not-to-fix.md`. In short: clean URLs with a host fallback, no canvas, no state
+See `docs/decisions-not-to-fix.md`. In short: clean URLs with a static-host fallback, no canvas, no state
 library yet, Tailwind instead of CSS Modules, no runtime network, a pure domain, a landscape-only play
 surface, commit-on-death progression, and the run's in-memory-only lifecycle are intentional.
 

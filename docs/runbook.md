@@ -39,15 +39,24 @@ silent multiple instances.
   runs the same checks.
 
 CI: `.github/workflows/ci.yml` runs `pnpm install --frozen-lockfile`, `pnpm check`, and `pnpm build`
-on pushes and pull requests.
+on pushes and pull requests. `.github/workflows/deploy.yml` runs the same gate on pushes to `main`
+(and manual dispatch from `main`), deploys the Pages artifact, and refreshes the `gh-pages` snapshot.
 
 ## Static hosting and “offline”
 
-- `vite.config.ts` uses `base: './'` so assets resolve relative to the document.
-- Routes are clean paths with `BrowserRouter`. Vite dev and preview provide history fallback; a
-  static host must serve `index.html` for unknown paths with a 200 response.
-- `dist/` can be served from a domain root. For a subpath deployment, set Vite `base` and the router
-  `basename` together; configuring only one breaks routing or asset URLs.
+- `vite.config.ts` uses `base: process.env.VITE_BASE ?? '/'`. Local dev, build, and preview use `/`;
+  the deploy workflow builds with `/react-shapebound/`.
+- Routes are clean paths with `BrowserRouter`; the router `basename` is derived from
+  `import.meta.env.BASE_URL`. A static host must serve `index.html` for unknown paths. Vite dev and
+  preview provide that fallback locally.
+- GitHub Pages cannot return a 200 for an unknown path. The deploy workflow copies `dist/index.html`
+  to `dist/404.html`; a direct link such as `/react-shapebound/play` boots the app, but the first
+  response is HTTP 404. This is accepted for a game with no SEO requirement.
+- GitHub Pages serves the build artifact at <https://itshinmo.github.io/react-shapebound/>.
+  `.github/workflows/deploy.yml` uploads `dist/` and deploys it with `actions/deploy-pages` on every
+  push to `main` and on manual dispatch from `main`. One-time setup: set **Pages → Source** to
+  **GitHub Actions**. The workflow also force-pushes a fresh `gh-pages` snapshot; that branch is a
+  best-effort build snapshot, not the Pages publishing source.
 - Offline currently means **no network after the page loads**. Fonts are bundled; there are no API
   calls, remote images, analytics, or runtime font CDNs.
 - A service worker/PWA is **not** included. Do not open `dist/index.html` directly with `file://`:
@@ -139,9 +148,20 @@ the tap is the required user gesture for fullscreen and `screen.orientation.lock
 Android Chrome supports both; iOS/Safari and most desktop browsers cannot lock orientation. Failure is
 non-blocking and the rotate overlay is the fallback. There is no PWA or manifest orientation policy.
 
-**A deep link 404s on a static host.** `BrowserRouter` needs history fallback: configure the host to
-serve `index.html` for unknown paths with a 200 response. Vite dev/preview already do this. For a
-subpath deployment, set Vite `base` and the router `basename` together.
+**A deep link shows GitHub's 404 page.** The deployed build must include `dist/404.html`; the deploy
+workflow copies it from `index.html`. The initial response for a route such as
+`/react-shapebound/play` is HTTP 404 by design, but the app should boot. If GitHub's own 404 page
+appears instead, check the deploy log and confirm the Pages source is **GitHub Actions**. In-app
+navigation works without the fallback; a hard refresh or a shared deep link needs it.
+
+**The deploy workflow fails at “Deploy to GitHub Pages.”** The repository's Pages source is not
+**GitHub Actions**. Open **Settings → Pages → Build and deployment → Source**, select **GitHub
+Actions**, then re-run the workflow. The `gh-pages` branch is only a snapshot and must not be selected
+as the source; a `GITHUB_TOKEN` push to it does not trigger a Pages build.
+
+**The “Publish gh-pages snapshot” step fails but the site deployed.** The snapshot is best-effort.
+The Pages artifact deploy does not depend on it. Check whether `gh-pages` is protected or the
+workflow token lacks `contents: write`; the site is still current if the deploy job succeeded.
 
 **The joystick does not appear.** It is touch/pen only, and only after the run starts. A mouse click
 does not create one; a second simultaneous touch is ignored. Releasing or cancelling the pointer

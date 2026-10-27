@@ -24,9 +24,12 @@ Enforced by `eslint.config.js` (`import-x/no-restricted-paths`, restricted impor
 
 - `BrowserRouter` + declarative `<Routes>` in `src/app/app.tsx`.
 - Routes: `/` title, `/play` landscape survival run, `/settings`, `/skills`, `*` not-found.
-- Clean URLs are deliberate (ADR-010). Static hosts need an `index.html` fallback; subpath hosting
-  needs matching Vite `base` and router `basename`. `PresentationLayout` renders `SiteHeader` once
-  and routes presentation pages through `<Outlet />`; `/play` is outside it and headerless.
+- Clean URLs are deliberate (ADR-010). The router `basename` comes from `import.meta.env.BASE_URL`;
+  Vite `base` is `/` locally and `/react-shapebound/` in the deploy build. A static host needs an
+  `index.html` fallback; GitHub Pages uses a `404.html` copy, so deep links boot with HTTP 404
+  (ADR-016). GitHub Pages deploys the artifact built by `.github/workflows/deploy.yml`, which also
+  refreshes a `gh-pages` snapshot. `PresentationLayout` renders `SiteHeader` once and routes
+  presentation pages through `<Outlet />`; `/play` is outside it and headerless.
 - `/settings` and `/skills` use the dark route field; the title stays yellow.
 - `/skills` is a read-only presentation page. It reads the save through
   `src/features/play/progression-storage.ts` and never writes, spends, or unlocks anything; the map is
@@ -89,7 +92,8 @@ Enforced by `eslint.config.js` (`import-x/no-restricted-paths`, restricted impor
 ## Deliberate constraints — do not “fix”
 
 - **No canvas/WebGL.** DOM-only is an accessibility and testability decision (ADR-002).
-- **Clean URLs need a host fallback.** BrowserRouter is intentional (ADR-010).
+- **Clean URLs need a host fallback.** BrowserRouter is intentional (ADR-010); GitHub Pages uses
+  `404.html` and accepts the HTTP 404 on deep links (ADR-016).
 - **No state library yet.** Feature state + pure functions until measured need (ADR-003).
 - **No runtime network.** Offline is a product requirement (ADR-001).
 - **No CSS Modules.** Tailwind + theme tokens is the styling system (ADR-005).
