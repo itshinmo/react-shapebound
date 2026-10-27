@@ -16,16 +16,24 @@ const CENTER_TOP_CLASS = 'top-[calc(env(safe-area-inset-top)_+_0.5rem)]';
 export interface RunHudHandle {
   write(run: RunState): void;
   setArenaTop(topPx: number): void;
+  focusPauseButton(): void;
 }
 
 interface RunHudProps {
   readonly banner: RunBannerSnapshot | null;
+  readonly isPaused: boolean;
+  readonly showPause: boolean;
+  readonly onPause: () => void;
 }
 
-export const RunHud = forwardRef<RunHudHandle, RunHudProps>(function RunHud({ banner }, ref) {
+export const RunHud = forwardRef<RunHudHandle, RunHudProps>(function RunHud(
+  { banner, isPaused, showPause, onPause },
+  ref,
+) {
   const rootRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<RunTimerHandle>(null);
   const timelineRef = useRef<RunTimelineHandle>(null);
+  const pauseButtonRef = useRef<HTMLButtonElement>(null);
 
   const write = useCallback((run: RunState) => {
     timerRef.current?.write(run);
@@ -36,7 +44,15 @@ export const RunHud = forwardRef<RunHudHandle, RunHudProps>(function RunHud({ ba
     rootRef.current?.style.setProperty('--arena-top', `${Math.max(0, topPx)}px`);
   }, []);
 
-  useImperativeHandle(ref, () => ({ write, setArenaTop }), [write, setArenaTop]);
+  const focusPauseButton = useCallback(() => {
+    pauseButtonRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  useImperativeHandle(ref, () => ({ write, setArenaTop, focusPauseButton }), [
+    write,
+    setArenaTop,
+    focusPauseButton,
+  ]);
 
   return (
     <div
@@ -70,6 +86,27 @@ export const RunHud = forwardRef<RunHudHandle, RunHudProps>(function RunHud({ ba
       >
         <RunTimeline ref={timelineRef} dimmed={banner !== null} />
       </div>
+
+      {showPause ? (
+        <button
+          ref={pauseButtonRef}
+          type="button"
+          aria-label="Pause menu"
+          aria-expanded={isPaused}
+          aria-controls="pause-menu"
+          data-testid="pause-button"
+          onClick={onPause}
+          onPointerDown={(event) => {
+            event.stopPropagation();
+          }}
+          className="pointer-events-auto clip-border absolute top-[calc(env(safe-area-inset-top)_+_0.5rem)] right-[max(1rem,env(safe-area-inset-right))] z-30 flex size-11 items-center justify-center text-ink transition-colors duration-150 ease-snap [--clip-border:var(--color-line-bright)] [--clip-fill:var(--color-void)] clip-corner-sm hover:text-cyan hover:[--clip-border:var(--color-cyan)] focus-visible:outline-none focus-visible:[--clip-border-width:2px] focus-visible:[--clip-border:var(--color-cyan)]"
+        >
+          <span aria-hidden="true" data-testid="pause-glyph" className="flex gap-1">
+            <span className="h-3.5 w-1 bg-current" />
+            <span className="h-3.5 w-1 bg-current" />
+          </span>
+        </button>
+      ) : null}
 
       {banner !== null ? <BossBanner key={banner.bossIndex} banner={banner} /> : null}
     </div>

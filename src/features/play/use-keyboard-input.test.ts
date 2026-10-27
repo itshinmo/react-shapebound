@@ -55,6 +55,29 @@ describe('useKeyboardInput', () => {
     expect(result.current.current).toEqual({ x: 0, y: 0 });
   });
 
+  it('clears movement and ignores keys while paused', () => {
+    const { result, rerender } = renderHook(
+      ({ paused }: { readonly paused: boolean }) => useKeyboardInput(true, paused),
+      { initialProps: { paused: false } },
+    );
+
+    fireEvent.keyDown(window, { code: 'KeyD' });
+    expect(result.current.current).toEqual({ x: 1, y: 0 });
+
+    rerender({ paused: true });
+
+    expect(result.current.current).toEqual({ x: 0, y: 0 });
+
+    fireEvent.keyDown(window, { code: 'KeyD' });
+
+    expect(result.current.current).toEqual({ x: 0, y: 0 });
+
+    rerender({ paused: false });
+    fireEvent.keyDown(window, { code: 'KeyD' });
+
+    expect(result.current.current).toEqual({ x: 1, y: 0 });
+  });
+
   it('ignores movement keys combined with browser modifiers', () => {
     const { result } = renderHook(() => useKeyboardInput(true));
 

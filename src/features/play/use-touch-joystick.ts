@@ -28,7 +28,7 @@ export interface TouchJoystickController {
   readonly pointerHandlers: TouchJoystickPointerHandlers;
 }
 
-export function useTouchJoystick(enabled: boolean): TouchJoystickController {
+export function useTouchJoystick(enabled: boolean, paused = false): TouchJoystickController {
   const [state, setState] = useState<JoystickState | null>(null);
   const activeRef = useRef<JoystickState | null>(null);
   const vectorRef = useRef<MovementInput>({ x: 0, y: 0 });
@@ -66,7 +66,7 @@ export function useTouchJoystick(enabled: boolean): TouchJoystickController {
 
   const onPointerDown = useCallback<PointerEventHandler<HTMLElement>>(
     (event) => {
-      if (!enabled || event.pointerType === 'mouse' || activeRef.current !== null) {
+      if (!enabled || paused || event.pointerType === 'mouse' || activeRef.current !== null) {
         return;
       }
 
@@ -94,38 +94,52 @@ export function useTouchJoystick(enabled: boolean): TouchJoystickController {
         }
       }
     },
-    [enabled],
+    [enabled, paused],
   );
 
-  const onPointerMove = useCallback<PointerEventHandler<HTMLElement>>((event) => {
-    const active = activeRef.current;
+  const onPointerMove = useCallback<PointerEventHandler<HTMLElement>>(
+    (event) => {
+      if (paused) {
+        return;
+      }
 
-    if (active === null) {
-      return;
-    }
+      const active = activeRef.current;
 
-    if (active.pointerId !== event.pointerId) {
-      return;
-    }
+      if (active === null) {
+        return;
+      }
 
-    const rect = event.currentTarget.getBoundingClientRect();
-    const { vector, offset } = getJoystickVector(
-      { x: active.anchorX, y: active.anchorY },
-      { x: event.clientX - rect.left, y: event.clientY - rect.top },
-    );
+      if (active.pointerId !== event.pointerId) {
+        return;
+      }
 
-    vectorRef.current = vector;
+      const rect = event.currentTarget.getBoundingClientRect();
+      const { vector, offset } = getJoystickVector(
+        { x: active.anchorX, y: active.anchorY },
+        { x: event.clientX - rect.left, y: event.clientY - rect.top },
+      );
 
-    if (knobRef.current !== null) {
-      knobRef.current.style.transform = `translate(-50%, -50%) translate3d(${offset.x}px, ${offset.y}px, 0)`;
-    }
-  }, []);
+      vectorRef.current = vector;
+
+      if (knobRef.current !== null) {
+        knobRef.current.style.transform = `translate(-50%, -50%) translate3d(${offset.x}px, ${offset.y}px, 0)`;
+      }
+    },
+    [paused],
+  );
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || paused) {
       activeRef.current = null;
       vectorRef.current = { x: 0, y: 0 };
-      return;
+
+      const frame = requestAnimationFrame(() => {
+        setState(null);
+      });
+
+      return () => {
+        cancelAnimationFrame(frame);
+      };
     }
 
     const clear = () => {
@@ -149,10 +163,10 @@ export function useTouchJoystick(enabled: boolean): TouchJoystickController {
       activeRef.current = null;
       vectorRef.current = { x: 0, y: 0 };
     };
-  }, [enabled]);
+  }, [enabled, paused]);
 
   return {
-    state: enabled ? state : null,
+    state: enabled && !paused ? state : null,
     activeRef,
     vectorRef,
     knobRef,

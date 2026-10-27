@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 
 import type { ViewportRect } from '@/game/enemy-spawn';
 import { createEnemyWorld, stepEnemies } from '@/game/enemy-world';
@@ -19,6 +20,7 @@ import { EnemyLayer } from './enemy-layer';
 import { isTouchDevice } from './is-touch-device';
 import { LandscapeGate } from './landscape-gate';
 import { releaseLandscapeLock, requestLandscapeLock } from './orientation-lock';
+import { PauseMenu } from './pause-menu';
 import { PlayerContainer } from './player-container';
 import { PlayerSquare } from './player-square';
 import { createProgressionStorage } from './progression-storage';
@@ -46,15 +48,16 @@ interface ArenaOffset {
   readonly top: number;
 }
 
-export function PlayScreen() {
-  return (
-    <LandscapeGate>
-      <PlaySurface />
-    </LandscapeGate>
-  );
+interface PlaySurfaceProps {
+  readonly portrait: boolean;
 }
 
-function PlaySurface() {
+export function PlayScreen() {
+  return <LandscapeGate>{(portrait) => <PlaySurface portrait={portrait} />}</LandscapeGate>;
+}
+
+function PlaySurface({ portrait }: PlaySurfaceProps) {
+  const navigate = useNavigate();
   const boardRef = useRef<HTMLElement>(null);
   const arenaRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
@@ -63,6 +66,8 @@ function PlaySurface() {
   const hudRef = useRef<RunHudHandle | null>(null);
   const playerStateRef = useRef<PlayerState | null>(null);
   const wasOverRef = useRef(false);
+  const focusPauseAfterResumeRef = useRef(false);
+  const focusPlayAfterRestartRef = useRef(false);
   const boundsRef = useRef<Bounds>(INITIAL_BOUNDS);
   const viewportRef = useRef<ViewportRect>(INITIAL_VIEWPORT);
   const arenaOffsetRef = useRef<ArenaOffset>(INITIAL_ARENA_OFFSET);
@@ -76,14 +81,39 @@ function PlaySurface() {
   const [storage] = useState(() => createProgressionStorage(getBrowserStorage()));
   const worldRef = useRef<EnemyWorld>(initial.world);
 
-  const keyboardInputRef = useKeyboardInput(started);
+  const handleReset = useCallback((seed: number) => {
+    const nextWorld = createEnemyWorld(seed);
+    const nextPlayer = createPlayer(PLAYER_BASE_STATS, boundsRef.current);
+
+    worldRef.current = nextWorld;
+    playerStateRef.current = nextPlayer;
+    writePlayerTransform(playerRef.current, nextPlayer);
+    enemyLayerHandleRef.current?.write(nextWorld);
+    hudRef.current?.write(createRun(seed));
+  }, []);
+
+  const runLoop = useRunLoop({
+    running: started,
+    initialSeed: initial.seed,
+    createSeed: createRunSeed,
+    storage,
+    onFrame: handleFrame,
+    onReset: handleReset,
+    portrait,
+  });
+  const isOver = runLoop.snapshot.status === 'over';
+  const isPaused = runLoop.snapshot.freezeReasons.includes('pause');
+  const inputBlocked = isPaused || portrait;
+  const { pause, resume, restart } = runLoop;
+
+  const keyboardInputRef = useKeyboardInput(started, inputBlocked);
   const {
     state: joystickState,
     activeRef: joystickStateRef,
     vectorRef: joystickInputRef,
     knobRef: joystickKnobRef,
     pointerHandlers,
-  } = useTouchJoystick(started);
+  } = useTouchJoystick(started, inputBlocked);
 
   const measureViewport = useCallback(() => {
     const arena = arenaRef.current;
@@ -168,90 +198,6 @@ function PlaySurface() {
     };
   }, [measureViewport]);
 
-  const handleFrame = useCallback(
-    (frame: RunFrame): RunFrameResult => {
-      const currentPlayer = playerStateRef.current;
-
-      if (currentPlayer === null) {
-        return { playerAlive: true, deathAtMs: null };
-      }
-
-      const input =
-        joystickStateRef.current !== null ? joystickInputRef.current : keyboardInputRef.current;
-      let player = stepPlayer(currentPlayer, input, frame.activeMs / 1_000, boundsRef.current);
-      let world = worldRef.current;
-      let worldChanged = false;
-      let deathAtMs: number | null = null;
-
-      for (const stepEndMs of frame.fixedStepEndsMs) {
-        if (!player.alive) {
-          break;
-        }
-
-        const arenaOffset = arenaOffsetRef.current;
-        const result = stepEnemies(world, {
-          stepEndMs,
-          viewport: viewportRef.current,
-          playerHurtbox: {
-            x: arenaOffset.left + player.x,
-            y: arenaOffset.top + player.y,
-            halfWidth: player.size * PLAYER_HURTBOX_HALF_FACTOR,
-            halfHeight: player.size * PLAYER_HURTBOX_HALF_FACTOR,
-          },
-          playerAlive: player.alive,
-        });
-
-        world = result.world;
-        worldChanged = true;
-
-        if (result.hit !== null) {
-          player = applyDamage(player, 1);
-
-          if (!player.alive) {
-            deathAtMs = stepEndMs;
-            break;
-          }
-        }
-      }
-
-      playerStateRef.current = player;
-      worldRef.current = world;
-      writePlayerTransform(playerRef.current, player);
-
-      if (worldChanged) {
-        enemyLayerHandleRef.current?.write(world);
-      }
-
-      hudRef.current?.write(frame.run);
-
-      return deathAtMs === null
-        ? { playerAlive: true, deathAtMs: null }
-        : { playerAlive: false, deathAtMs };
-    },
-    [joystickInputRef, joystickStateRef, keyboardInputRef],
-  );
-
-  const handleReset = useCallback((seed: number) => {
-    const nextWorld = createEnemyWorld(seed);
-    const nextPlayer = createPlayer(PLAYER_BASE_STATS, boundsRef.current);
-
-    worldRef.current = nextWorld;
-    playerStateRef.current = nextPlayer;
-    writePlayerTransform(playerRef.current, nextPlayer);
-    enemyLayerHandleRef.current?.write(nextWorld);
-    hudRef.current?.write(createRun(seed));
-  }, []);
-
-  const runLoop = useRunLoop({
-    running: started,
-    initialSeed: initial.seed,
-    createSeed: createRunSeed,
-    storage,
-    onFrame: handleFrame,
-    onReset: handleReset,
-  });
-  const isOver = runLoop.snapshot.status === 'over';
-
   useEffect(() => {
     const board = boardRef.current;
 
@@ -282,6 +228,43 @@ function PlaySurface() {
     hudRef.current?.write(runLoop.runRef.current);
   }, [isOver, runLoop.runRef]);
 
+  useEffect(() => {
+    if (isPaused) {
+      return;
+    }
+
+    if (focusPauseAfterResumeRef.current) {
+      focusPauseAfterResumeRef.current = false;
+      hudRef.current?.focusPauseButton();
+    }
+
+    if (focusPlayAfterRestartRef.current) {
+      focusPlayAfterRestartRef.current = false;
+      boardRef.current?.focus({ preventScroll: true });
+    }
+  }, [isPaused]);
+
+  useEffect(() => {
+    if (!started || isOver || isPaused || portrait) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.repeat || event.defaultPrevented) {
+        return;
+      }
+
+      event.preventDefault();
+      pause();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isOver, isPaused, pause, portrait, started]);
+
   const handleStart = useCallback(() => {
     if (starting) {
       return;
@@ -297,6 +280,80 @@ function PlaySurface() {
       });
   }, [starting]);
 
+  const handleResume = useCallback(() => {
+    focusPauseAfterResumeRef.current = true;
+    resume();
+  }, [resume]);
+
+  const handleRestart = useCallback(() => {
+    focusPlayAfterRestartRef.current = true;
+    restart();
+  }, [restart]);
+
+  const handleBackToTitle = useCallback(() => {
+    void navigate('/');
+  }, [navigate]);
+
+  function handleFrame(frame: RunFrame): RunFrameResult {
+    const currentPlayer = playerStateRef.current;
+
+    if (currentPlayer === null) {
+      return { playerAlive: true, deathAtMs: null };
+    }
+
+    const input =
+      joystickStateRef.current !== null ? joystickInputRef.current : keyboardInputRef.current;
+    let player = stepPlayer(currentPlayer, input, frame.activeMs / 1_000, boundsRef.current);
+    let world = worldRef.current;
+    let worldChanged = false;
+    let deathAtMs: number | null = null;
+
+    for (const stepEndMs of frame.fixedStepEndsMs) {
+      if (!player.alive) {
+        break;
+      }
+
+      const arenaOffset = arenaOffsetRef.current;
+      const result = stepEnemies(world, {
+        stepEndMs,
+        viewport: viewportRef.current,
+        playerHurtbox: {
+          x: arenaOffset.left + player.x,
+          y: arenaOffset.top + player.y,
+          halfWidth: player.size * PLAYER_HURTBOX_HALF_FACTOR,
+          halfHeight: player.size * PLAYER_HURTBOX_HALF_FACTOR,
+        },
+        playerAlive: player.alive,
+      });
+
+      world = result.world;
+      worldChanged = true;
+
+      if (result.hit !== null) {
+        player = applyDamage(player, 1);
+
+        if (!player.alive) {
+          deathAtMs = stepEndMs;
+          break;
+        }
+      }
+    }
+
+    playerStateRef.current = player;
+    worldRef.current = world;
+    writePlayerTransform(playerRef.current, player);
+
+    if (worldChanged) {
+      enemyLayerHandleRef.current?.write(world);
+    }
+
+    hudRef.current?.write(frame.run);
+
+    return deathAtMs === null
+      ? { playerAlive: true, deathAtMs: null }
+      : { playerAlive: false, deathAtMs };
+  }
+
   return (
     <>
       <section
@@ -304,7 +361,7 @@ function PlaySurface() {
         aria-label="Play field"
         aria-describedby="play-instructions"
         tabIndex={-1}
-        inert={isOver}
+        inert={isOver || portrait}
         className="fixed inset-0 touch-none overflow-hidden overscroll-none bg-void select-none focus:outline-none"
         {...pointerHandlers}
       >
@@ -330,9 +387,28 @@ function PlaySurface() {
         <EnemyLayer ref={enemyLayerHandleRef} layerRef={enemyLayerRef} />
 
         <TouchJoystick state={joystickState} knobRef={joystickKnobRef} />
-        {started ? <RunHud ref={hudRef} banner={runLoop.snapshot.banner} /> : null}
+        {started ? (
+          <RunHud
+            ref={hudRef}
+            banner={runLoop.snapshot.banner}
+            isPaused={isPaused}
+            showPause={!isOver}
+            onPause={pause}
+          />
+        ) : null}
         {started ? null : <StartOverlay onStart={handleStart} pending={starting} />}
       </section>
+
+      {isPaused && !isOver ? (
+        <PauseMenu
+          frozenElapsedMs={runLoop.runRef.current.elapsedMs}
+          suspended={portrait}
+          onResume={handleResume}
+          onRestart={handleRestart}
+          onBackToTitle={handleBackToTitle}
+        />
+      ) : null}
+
       {isOver ? (
         <RunOverOverlay
           finalElapsedMs={runLoop.runRef.current.elapsedMs}
@@ -340,6 +416,7 @@ function PlaySurface() {
           committedData={runLoop.committedData}
           onRetry={runLoop.retry}
           onRetryCommit={runLoop.retryCommit}
+          suspended={portrait}
         />
       ) : null}
     </>

@@ -28,7 +28,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
   );
 }
 
-export function useKeyboardInput(enabled: boolean): RefObject<MovementInput> {
+export function useKeyboardInput(enabled: boolean, paused = false): RefObject<MovementInput> {
   const inputRef = useRef<MovementInput>({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function useKeyboardInput(enabled: boolean): RefObject<MovementInput> {
       inputRef.current = { x: 0, y: 0 };
     };
 
-    if (!enabled) {
+    if (!enabled || paused) {
       clearInput();
       return;
     }
@@ -106,7 +106,7 @@ export function useKeyboardInput(enabled: boolean): RefObject<MovementInput> {
       pressed.clear();
       clearInput();
     };
-  }, [enabled]);
+  }, [enabled, paused]);
 
   return inputRef;
 }
