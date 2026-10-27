@@ -26,7 +26,7 @@ export function TitleScreen() {
                 aria-hidden="true"
                 className="hidden h-px min-w-8 flex-1 bg-ink-inverse/30 sm:block"
               />
-              <span className="text-ink-inverse/60">MOVEMENT SLICE</span>
+              <span className="text-ink-inverse/60">SURVIVAL RUN SLICE</span>
             </div>
 
             <h1
@@ -50,6 +50,9 @@ export function TitleScreen() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <LinkButton to="/play" variant="inverse" size="lg">
                 INITIALIZE <span aria-hidden="true">→</span>
+              </LinkButton>
+              <LinkButton to="/skills" variant="secondary" size="lg">
+                SKILL TREE
               </LinkButton>
               <LinkButton to="/settings" variant="secondary" size="lg">
                 CONFIGURE
@@ -112,8 +115,9 @@ export function TitleScreen() {
                     CURRENT SLICE
                   </p>
                   <p className="mt-1 font-body text-sm leading-snug text-ink/80">
-                    The play screen has a movable square on a landscape-only board. Combat, bosses,
-                    points, and the skill tree are not built.
+                    The play screen is a landscape-only survival run with a movable square, a timer,
+                    blue points, enemy threats, and a HUD. The skill tree page is a locked preview;
+                    upgrades, combat, and bosses are not built.
                   </p>
                 </div>
               </div>
@@ -153,8 +157,9 @@ export function TitleScreen() {
                 PLAYABLE SLICE
               </h2>
               <p className="mt-2 font-body text-sm leading-snug text-muted">
-                The play board has a movable square, keyboard input, and a touch joystick. Combat,
-                bosses, and progression are not built.
+                The play board has a movable square, keyboard input, a touch joystick, a survival
+                clock, blue points, and enemy threats. The skill tree is a locked preview; upgrades,
+                combat, and bosses are not built.
               </p>
               <span className="mt-4 inline-block border border-acid px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-acid uppercase">
                 SLICE 01
