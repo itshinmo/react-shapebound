@@ -103,7 +103,7 @@ function PlaySurface({ portrait }: PlaySurfaceProps) {
   });
   const isOver = runLoop.snapshot.status === 'over';
   const isPaused = runLoop.snapshot.freezeReasons.includes('pause');
-  const inputBlocked = isPaused || portrait;
+  const inputBlocked = isPaused || isOver || portrait;
   const { pause, resume, restart } = runLoop;
 
   const keyboardInputRef = useKeyboardInput(started, inputBlocked);

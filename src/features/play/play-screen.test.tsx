@@ -386,6 +386,7 @@ describe('PlayScreen', () => {
     expect(screen.getByRole('timer')).toHaveTextContent('00:00:02');
     expect(screen.getByTestId('run-hud').className).toContain('z-30');
     expect(screen.queryByRole('button', { name: 'Pause menu' })).not.toBeInTheDocument();
+    expect(fireEvent.keyDown(window, { code: 'ArrowUp' })).toBe(true);
 
     changePortrait(true);
 
