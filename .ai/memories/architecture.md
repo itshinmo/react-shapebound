@@ -98,5 +98,7 @@ Enforced by `eslint.config.js` (`import-x/no-restricted-paths`, restricted impor
   decision (ADR-011).
 - **Glow scope follows the run boundary.** In-run surfaces react to the slider; presentation pages
   and focus rings do not (ADR-015).
+- **Dependencies are proposed, not installed.** Check `docs/dependency-candidates.md`; notify the
+  author before adding a package; runtime dependencies need an ADR (ADR-003).
 
 See `docs/decisions-not-to-fix.md` for the maintained list.

@@ -95,8 +95,9 @@ after load”; a PWA is not included. Serve the build over HTTP (`pnpm preview`)
 ## AI-assisted workflow
 
 Read `AGENTS.md` first. The short version: agents never stage or commit without an explicit request;
-verify with `pnpm check`; update docs in the same change. See `CONTRIBUTING.md`,
-`docs/working-with-agents.md`, and `.ai/README.md` for the full workflow.
+verify with `pnpm check`; update docs in the same change. Before proposing or installing a package,
+check `docs/dependency-candidates.md` and notify the author; runtime dependencies require an ADR.
+See `CONTRIBUTING.md`, `docs/working-with-agents.md`, and `.ai/README.md` for the full workflow.
 
 ## License
 

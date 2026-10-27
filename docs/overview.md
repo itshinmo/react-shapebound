@@ -63,6 +63,7 @@ There is no server process, database, API, or runtime network call. `dist/` is a
 | Architecture and rules   | `docs/architecture.md`                                      |
 | Palette, type, Tailwind  | `docs/design-system.md`                                     |
 | Component inventory      | `docs/components.md`                                        |
+| Dependency watchlist     | `docs/dependency-candidates.md`                             |
 | Game design skeleton     | `docs/game-design.md`                                       |
 | Run, build, troubleshoot | `docs/runbook.md`                                           |
 | Deliberate oddities      | `docs/decisions-not-to-fix.md`                              |
