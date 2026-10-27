@@ -20,6 +20,10 @@ TypeScript and ESLint majors are pinned for compatibility: `typescript-eslint` 8
 `<6.1`, and `eslint-plugin-jsx-a11y` 6.10 supports ESLint `^9`. Do not bump either alone; run the
 full gate and update this table.
 
+Dependency additions are proposed before installation; see
+[`docs/dependency-candidates.md`](dependency-candidates.md). Runtime dependencies require an ADR;
+dev dependencies still need an explanation, a measured need, and CI/bundle consideration.
+
 ## Layers
 
 ```text

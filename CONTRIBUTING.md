@@ -35,7 +35,8 @@ pnpm test           pnpm check          pnpm verify
 - **DOM only.** No canvas/WebGL. See `docs/decisions-not-to-fix.md`.
 - **`src/game` is pure.** No React, DOM, storage, timers, clocks, or `Math.random`.
 - **Tailwind + semantic tokens.** No CSS Modules, no raw hex in components.
-- **New runtime dependency → ADR.** Prefer zero.
+- **Check the dependency watchlist first.** Read `docs/dependency-candidates.md` and notify the author
+  before installing a package. A new runtime dependency → ADR; prefer zero.
 - **Update docs in the same change** as the behavior. Use the maintenance table in `AGENTS.md`.
 - **Never weaken a test or lint rule to go green.**
 

@@ -124,7 +124,7 @@ column, review the right column **in the same change**.
 | game rules, state shape, or reducer actions    | `docs/architecture.md#game-domain`, `docs/game-design.md`, `decisions/ADR-003`, `decisions/ADR-011`, `decisions/ADR-012`, `decisions/ADR-013`, game tests                     |
 | save schema, migrations, or storage keys       | `docs/architecture.md#settings-and-local-state`, `docs/architecture.md#future-save-migrations`, `docs/runbook.md#save-recovery`, `decisions/ADR-011`, `src/game/save.test.ts` |
 | colors, type, spacing, motion, or utilities    | `docs/design-system.md`, `src/styles/global.css`, `decisions/ADR-014`, `decisions/ADR-015`, `.ai/memories/conventions.md`                                                     |
-| a dependency                                   | an ADR for runtime `dependencies`; `README.md` stack; `AGENTS.md` commands                                                                                                    |
+| a dependency                                   | `docs/dependency-candidates.md`; an ADR for runtime `dependencies`; `README.md` stack; `AGENTS.md` commands                                                                   |
 | scripts, commands, or build config             | `AGENTS.md`, `README.md`, `docs/runbook.md`, `.github/workflows/ci.yml`                                                                                                       |
 | ESLint, TypeScript, Prettier, or Vitest config | `docs/architecture.md#quality-gates`, `.ai/memories/conventions.md`                                                                                                           |
 | layer boundaries or import rules               | `eslint.config.js`, `docs/architecture.md#layers`, `.ai/memories/architecture.md`                                                                                             |
@@ -145,6 +145,10 @@ column, review the right column **in the same change**.
   fonts, or runtime data fetching (ADR-001).
 - **No new runtime dependency without an ADR.** Prefer zero. Dev dependencies do not need an ADR,
   but explain why they are needed in the change summary.
+- **Check before adding any dependency.** Read `docs/dependency-candidates.md` first. If a task
+  could benefit from a listed candidate or a new package, stop and notify the author with the
+  problem, the candidate, the current alternative, whether it is runtime or dev, and the estimated
+  cost. Do not install it without explicit approval; runtime dependencies still need an ADR.
 - **No barrel files.** Import from the concrete module. No `index.ts` re-export layers.
 - **No CSS Modules, CSS-in-JS, or global stylesheet growth.** Style with Tailwind utilities and the
   semantic theme tokens in `src/styles/global.css`. No inline hex/rgb values. Arbitrary values need
@@ -217,6 +221,7 @@ inherit`. This is the canonical border treatment for buttons, panels, the site h
 
 - `.ai/README.md` — map, placement rules, precedence, workflow.
 - `docs/architecture.md` — layers, routing, game domain, persistence, quality gates.
+- `docs/dependency-candidates.md` — dependency watchlist, triggers, costs, and the notify-first protocol.
 - `docs/design-system.md` — palette, typography, Tailwind conventions, accessibility.
 - `docs/working-with-agents.md` — how the roles, skills, invocation, and approval gates work.
 - `decisions/README.md` — ADR conventions and index.

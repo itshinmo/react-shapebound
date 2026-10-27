@@ -199,9 +199,12 @@ pointer file. Do not copy the contents.
 
 ## Dependency policy
 
-- Runtime dependencies: `react`, `react-dom`, `react-router`, and the three Fontsource asset packages
+- Runtime dependencies: `react`, `react-dom`, `react-router`, and the four Fontsource asset packages
   (ADR-001, ADR-005).
 - Build/test tooling is a dev dependency.
+- Check [`docs/dependency-candidates.md`](dependency-candidates.md) before adding any package. Stop
+  and notify the author with the problem, candidate, current alternative, type, and estimated cost;
+  do not install without approval.
 - A new **runtime** dependency needs an ADR. Prefer zero; the game should not accumulate convenience
   libraries.
 - `pnpm-lock.yaml` is generated. Do not hand-edit it.
