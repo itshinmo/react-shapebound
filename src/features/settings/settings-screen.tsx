@@ -2,10 +2,10 @@ import { useState } from 'react';
 
 import { cx } from '@/shared/lib/cx';
 import { Button } from '@/shared/ui/button';
+import { GlowPreview } from '@/shared/ui/glow-preview';
 import { Panel } from '@/shared/ui/panel';
 import { SectionLabel } from '@/shared/ui/section-label';
 
-import { GlowPreview } from './glow-preview';
 import { useSettings } from './settings-context';
 import {
   GLOW_INTENSITY_MAX,
@@ -109,8 +109,9 @@ export function SettingsScreen() {
                 Glow intensity
               </h2>
               <p className="mt-1 font-body text-sm leading-snug text-muted">
-                Adjust the player, arena, and joystick glow. The preview mirrors the play field;
-                interface glows stay fixed.
+                Adjust the glow on every in-run surface: the play field, enemies, warnings,
+                timeline, boss banner, pause menu, and run-over. Presentation pages keep fixed
+                glows.
               </p>
 
               <div className="mt-6 grid gap-5 sm:grid-cols-[minmax(0,1fr)_10rem] sm:items-center">
@@ -148,7 +149,7 @@ export function SettingsScreen() {
                     id="glow-intensity-help"
                     className="mt-3 font-mono text-[0.58rem] leading-relaxed tracking-[0.16em] text-muted uppercase"
                   >
-                    PLAY-FIELD GLOW ONLY. INTERFACE GLOWS STAY FIXED.
+                    IN-RUN GLOW ONLY. PRESENTATION PAGES STAY FIXED.
                   </p>
                 </div>
 
