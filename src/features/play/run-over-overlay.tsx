@@ -12,6 +12,7 @@ interface RunOverOverlayProps {
   readonly committedData: ProgressionData | null;
   readonly onRetry: () => void;
   readonly onRetryCommit: () => void;
+  readonly suspended?: boolean;
 }
 
 const UNREADABLE_HEADING = 'SAVED PROGRESS COULD NOT BE READ — THIS RUN WAS NOT SAVED';
@@ -27,6 +28,7 @@ export function RunOverOverlay({
   committedData,
   onRetry,
   onRetryCommit,
+  suspended = false,
 }: RunOverOverlayProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -62,11 +64,27 @@ export function RunOverOverlay({
       return;
     }
 
+    if (suspended) {
+      if (dialog.open && typeof dialog.close === 'function') {
+        dialog.close();
+      }
+
+      return;
+    }
+
     if (!dialog.open && typeof dialog.showModal === 'function') {
       dialog.showModal();
     }
 
     headingRef.current?.focus();
+  }, [suspended]);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+
+    if (dialog === null) {
+      return;
+    }
 
     return () => {
       if (dialog.open && typeof dialog.close === 'function') {
@@ -76,13 +94,13 @@ export function RunOverOverlay({
   }, []);
 
   useEffect(() => {
-    if (!retrySaveRequestedRef.current || status === 'pending') {
+    if (suspended || !retrySaveRequestedRef.current || status === 'pending') {
       return;
     }
 
     retrySaveRequestedRef.current = false;
     statusRef.current?.focus();
-  }, [retrySaveRequest, status]);
+  }, [retrySaveRequest, status, suspended]);
 
   const handleRetrySave = () => {
     retrySaveRequestedRef.current = true;

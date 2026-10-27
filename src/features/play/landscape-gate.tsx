@@ -2,21 +2,31 @@ import { useLandscape } from './use-landscape';
 
 import type { ReactNode } from 'react';
 
+export type LandscapeGateChildren = ReactNode | ((portrait: boolean) => ReactNode);
+
 interface LandscapeGateProps {
-  readonly children: ReactNode;
+  readonly children: LandscapeGateChildren;
 }
 
 export function LandscapeGate({ children }: LandscapeGateProps) {
   const isLandscape = useLandscape();
+  const portrait = !isLandscape;
 
-  if (isLandscape) {
-    return children;
-  }
+  return (
+    <>
+      {typeof children === 'function' ? children(portrait) : children}
+      {portrait ? <PortraitGateOverlay /> : null}
+    </>
+  );
+}
 
+function PortraitGateOverlay() {
   return (
     <div
       role="status"
       aria-live="polite"
+      data-testid="portrait-gate"
+      data-orientation="portrait"
       className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden bg-void px-6 py-10 text-ink"
     >
       <div className="w-full max-w-lg text-center">

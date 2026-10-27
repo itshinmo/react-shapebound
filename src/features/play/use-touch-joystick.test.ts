@@ -112,4 +112,37 @@ describe('useTouchJoystick', () => {
 
     expect(result.current.state).toBeNull();
   });
+
+  it('clears an active gesture and ignores pointer input while paused', () => {
+    const board = createBoard();
+    const { result, rerender } = renderHook(
+      ({ paused }: { readonly paused: boolean }) => useTouchJoystick(true, paused),
+      { initialProps: { paused: false } },
+    );
+
+    act(() => {
+      result.current.pointerHandlers.onPointerDown(createPointerEvent(board));
+    });
+
+    act(() => {
+      result.current.pointerHandlers.onPointerMove(
+        createPointerEvent(board, { clientX: 156, clientY: 100 }),
+      );
+    });
+
+    expect(result.current.state).not.toBeNull();
+    expect(result.current.vectorRef.current.x).toBeCloseTo(1);
+
+    rerender({ paused: true });
+
+    expect(result.current.state).toBeNull();
+    expect(result.current.vectorRef.current).toEqual({ x: 0, y: 0 });
+
+    act(() => {
+      result.current.pointerHandlers.onPointerDown(createPointerEvent(board));
+    });
+
+    expect(result.current.state).toBeNull();
+    expect(result.current.vectorRef.current).toEqual({ x: 0, y: 0 });
+  });
 });

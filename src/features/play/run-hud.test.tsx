@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
 import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -16,14 +16,31 @@ function runAt(ms: number): RunState {
   return advanceRun(createRun(7), ms);
 }
 
-function renderHud(banner: RunBannerSnapshot | null = null) {
+interface RenderHudOptions {
+  readonly banner?: RunBannerSnapshot | null;
+  readonly isPaused?: boolean;
+  readonly showPause?: boolean;
+  readonly onPause?: () => void;
+}
+
+function renderHud(options: RenderHudOptions = {}) {
   const handleRef = createRef<RunHudHandle>();
+  const onPause = options.onPause ?? (() => undefined);
 
-  const view = renderWithProviders(<RunHud ref={handleRef} banner={banner} />, {
-    route: '/play',
-  });
+  const view = renderWithProviders(
+    <RunHud
+      ref={handleRef}
+      banner={options.banner ?? null}
+      isPaused={options.isPaused ?? false}
+      showPause={options.showPause ?? true}
+      onPause={onPause}
+    />,
+    {
+      route: '/play',
+    },
+  );
 
-  return { ...view, handleRef };
+  return { ...view, handleRef, onPause };
 }
 
 function write(handleRef: { current: RunHudHandle | null }, ms: number): void {
@@ -259,7 +276,7 @@ describe('RunHud boss banner', () => {
   });
 
   it('announces the boss color and milestone once as a polite status', () => {
-    renderHud({ bossIndex: 1, color: 'purple' });
+    renderHud({ banner: { bossIndex: 1, color: 'purple' } });
 
     const banner = screen.getByTestId('boss-banner');
     const status = screen.getByRole('status');
@@ -278,7 +295,7 @@ describe('RunHud boss banner', () => {
   });
 
   it('uses the boss color, flash, and milestone for later bosses', () => {
-    renderHud({ bossIndex: 2, color: 'green' });
+    renderHud({ banner: { bossIndex: 2, color: 'green' } });
 
     const banner = screen.getByTestId('boss-banner');
 
@@ -290,7 +307,7 @@ describe('RunHud boss banner', () => {
   });
 
   it('dims the timeline visual and legend while the banner is visible', () => {
-    renderHud({ bossIndex: 1, color: 'purple' });
+    renderHud({ banner: { bossIndex: 1, color: 'purple' } });
 
     const visual = screen.getByTestId('timeline-visual');
     const list = screen.getByTestId('timeline-list');
@@ -301,12 +318,74 @@ describe('RunHud boss banner', () => {
 
   it('hides the decorative glitch strip under the in-app reduced-motion setting', () => {
     enableReducedMotion();
-    renderHud({ bossIndex: 1, color: 'purple' });
+    renderHud({ banner: { bossIndex: 1, color: 'purple' } });
 
     const banner = screen.getByTestId('boss-banner');
 
     expect(banner).toHaveAttribute('data-reduced-motion', 'true');
     expect(screen.queryByTestId('boss-glitch')).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('PURPLE');
+  });
+});
+
+describe('RunHud pause control', () => {
+  it('renders a 44px labelled pause button as the HUD’s only tab stop', () => {
+    renderHud();
+
+    const hud = screen.getByTestId('run-hud');
+    const pause = screen.getByRole('button', { name: 'Pause menu' });
+    const buttons = within(hud).getAllByRole('button');
+
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]).toBe(pause);
+    expect(within(hud).queryByRole('link')).not.toBeInTheDocument();
+    expect(within(hud).queryByRole('slider')).not.toBeInTheDocument();
+    expect(within(hud).queryByRole('textbox')).not.toBeInTheDocument();
+    expect(within(hud).queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(pause).toHaveAttribute('aria-expanded', 'false');
+    expect(pause).toHaveAttribute('aria-controls', 'pause-menu');
+    expect(pause.className).toContain('size-11');
+    expect(pause.className).toContain('focus-visible:[--clip-border:var(--color-cyan)]');
+    expect(pause.className).not.toContain('glow-');
+    expect(pause.className).not.toContain('shadow-glow');
+    expect(screen.getByTestId('pause-glyph')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('reports the paused state and calls onPause without anchoring the joystick', () => {
+    const onPause = vi.fn();
+    const pointerDown = vi.fn();
+
+    renderHud({ isPaused: true, onPause });
+
+    const pause = screen.getByRole('button', { name: 'Pause menu' });
+
+    expect(pause).toHaveAttribute('aria-expanded', 'true');
+
+    document.addEventListener('pointerdown', pointerDown);
+    fireEvent.pointerDown(pause);
+    document.removeEventListener('pointerdown', pointerDown);
+
+    expect(pointerDown).not.toHaveBeenCalled();
+
+    fireEvent.click(pause);
+
+    expect(onPause).toHaveBeenCalledTimes(1);
+  });
+
+  it('focuses the pause button through the handle and hides it once the run is over', () => {
+    const { handleRef } = renderHud();
+    const pause = screen.getByRole('button', { name: 'Pause menu' });
+
+    act(() => {
+      handleRef.current?.focusPauseButton();
+    });
+
+    expect(pause).toHaveFocus();
+  });
+
+  it('does not render the pause control when the run is over', () => {
+    renderHud({ showPause: false });
+
+    expect(screen.queryByRole('button', { name: 'Pause menu' })).not.toBeInTheDocument();
   });
 });

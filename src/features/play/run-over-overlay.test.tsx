@@ -56,6 +56,31 @@ function RetrySaveHarness({ nextCommit }: { readonly nextCommit: 'saved' | 'fail
   );
 }
 
+function SuspensionHarness() {
+  const [suspended, setSuspended] = useState(false);
+
+  return (
+    <>
+      <RunOverOverlay
+        finalElapsedMs={60_000}
+        commit="saved"
+        committedData={makeData(60)}
+        onRetry={() => undefined}
+        onRetryCommit={() => undefined}
+        suspended={suspended}
+      />
+      <button
+        type="button"
+        onClick={() => {
+          setSuspended((value) => !value);
+        }}
+      >
+        Toggle suspension
+      </button>
+    </>
+  );
+}
+
 describe('RunOverOverlay', () => {
   it('opens a modal dialog labelled by the run-over heading and focused on mount', () => {
     const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal');
@@ -254,4 +279,32 @@ describe('RunOverOverlay', () => {
       });
     },
   );
+
+  it('closes for portrait suspension and reopens with the heading focused', async () => {
+    const user = userEvent.setup();
+    const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal');
+
+    renderWithProviders(<SuspensionHarness />);
+
+    const dialog = screen.getByRole('dialog');
+    const heading = screen.getByRole('heading', { level: 2, name: 'SIGNAL LOST' });
+
+    expect(dialog).toHaveAttribute('open');
+    expect(showModal).toHaveBeenCalledTimes(1);
+    expect(heading).toHaveFocus();
+
+    await user.click(screen.getByRole('button', { name: 'Toggle suspension' }));
+
+    expect(dialog).not.toHaveAttribute('open');
+    expect(heading).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Toggle suspension' }));
+
+    expect(dialog).toHaveAttribute('open');
+    expect(showModal).toHaveBeenCalledTimes(2);
+
+    await waitFor(() => {
+      expect(heading).toHaveFocus();
+    });
+  });
 });
