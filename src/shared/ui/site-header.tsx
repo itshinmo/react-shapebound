@@ -9,6 +9,7 @@ const navItems = [
   { to: '/', label: '01 // TITLE' },
   { to: '/play', label: '02 // PLAY' },
   { to: '/settings', label: '03 // CONFIG' },
+  { to: '/skills', label: '04 // SKILLS' },
 ] as const;
 
 function SiteHeaderComponent() {

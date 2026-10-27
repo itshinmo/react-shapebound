@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './app';
@@ -45,6 +45,33 @@ describe('App routing', () => {
 
     expect(screen.getByRole('banner')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /03 \/\/ config/i })).toBeInTheDocument();
+  });
+
+  it('renders the skills screen inside the presentation layout with the shared nav', () => {
+    window.history.pushState({}, '', '/skills');
+
+    render(<App />);
+
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'SKILL TREE' })).toBeInTheDocument();
+
+    const nav = screen.getByRole('navigation', { name: 'Primary' });
+    expect(
+      within(nav)
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['01 // TITLE', '02 // PLAY', '03 // CONFIG', '04 // SKILLS']);
+
+    const skillsLink = within(nav).getByRole('link', { name: '04 // SKILLS' });
+    expect(skillsLink).toHaveAttribute('href', '/skills');
+    expect(skillsLink.className).toContain('text-acid');
+  });
+
+  it('links to the skills page from the title screen', () => {
+    render(<App />);
+
+    const skillsLink = screen.getByRole('link', { name: 'SKILL TREE' });
+    expect(skillsLink).toHaveAttribute('href', '/skills');
   });
 
   it('renders the play screen outside the presentation layout', () => {

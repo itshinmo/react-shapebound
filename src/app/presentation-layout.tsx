@@ -6,16 +6,18 @@ import { SiteHeader } from '@/shared/ui/site-header';
 export function PresentationLayout() {
   const { pathname } = useLocation();
   const isSettings = pathname === '/settings';
+  const isSkills = pathname === '/skills';
   const isTitle = pathname === '/';
+  const isDarkField = isSettings || isSkills;
 
   return (
     <div
       className={cx(
         'relative flex min-h-svh flex-col',
-        isSettings ? 'bg-void text-ink' : 'bg-paper text-ink-inverse',
+        isDarkField ? 'bg-void text-ink' : 'bg-paper text-ink-inverse',
       )}
     >
-      {isSettings ? (
+      {isDarkField ? (
         <>
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-aurora" />
           <div

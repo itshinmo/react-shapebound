@@ -4,6 +4,7 @@ import { NotFoundScreen } from '@/features/not-found/not-found-screen';
 import { PlayScreen } from '@/features/play/play-screen';
 import { SettingsProvider } from '@/features/settings/settings-provider';
 import { SettingsScreen } from '@/features/settings/settings-screen';
+import { SkillsScreen } from '@/features/skills/skills-screen';
 import { TitleScreen } from '@/features/title/title-screen';
 
 import { AppErrorBoundary } from './app-error-boundary';
@@ -20,6 +21,7 @@ export function App() {
               <Route element={<PresentationLayout />}>
                 <Route path="/" element={<TitleScreen />} />
                 <Route path="/settings" element={<SettingsScreen />} />
+                <Route path="/skills" element={<SkillsScreen />} />
                 <Route path="*" element={<NotFoundScreen />} />
               </Route>
               <Route path="/play" element={<PlayScreen />} />
