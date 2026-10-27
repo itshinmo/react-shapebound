@@ -6,29 +6,41 @@ with HTML and CSS — no canvas, no WebGL, no backend.
 
 ## Current status
 
-The project has a **first playable movement slice**, not a complete game. What exists:
+The project has a **survival run slice**, not a complete game. What exists:
 
-- Four clean routes: title, play, settings, not-found. `PresentationLayout` renders the shared
-  black/acid `SiteHeader` once for the presentation pages; the play screen is outside it and
+- Five clean routes: title, play, settings, skills, and not-found. `PresentationLayout` renders the
+  shared black/acid `SiteHeader` once for the presentation pages; the play screen is outside it and
   headerless.
 - A full-viewport, landscape-only play board with a square player, a static outlined player
   container, keyboard movement, and a touch-anchored joystick. The player is confined to the
   container; the screen is not a collision boundary.
-- A landscape-only play screen with best-effort fullscreen and orientation lock on touch devices.
-  Where the browser cannot lock orientation, a blocking rotate overlay is the fallback. The title,
-  settings, and not-found pages stay responsive in portrait and landscape.
-- A pure player domain for movement, container bounds, health-to-shield conversion, and damage
-  order. The container size is a future skill-tree upgrade.
-- A local settings provider with persisted reduced-motion and glow-intensity preferences.
-- A pure seeded RNG and a versioned, generic save envelope.
+- An active-time run: `mm:ss:cc` timer, blue points at one per active second, a 320 px timeline with
+  repeating five-minute boss markers, a boss-marker banner, and a stacked freeze set (`pause`,
+  `hidden`, `portrait`, `focus`).
+- Viewport-space enemy threats: red squares that aim once and travel straight, and orange triangles
+  that stop, lock an aim, charge a hatched lane, and fire a hitscan beam once. The enemy layer is a
+  fixed 28-node DOM pool.
+- A run HUD with timer/points, timeline, legend, boss banner, and pause control; a native pause menu
+  with config, restart/back confirmations, and a locked Skill Tree item; and a modal run-over with
+  final time/points and the commit outcome.
+- A v1 progression record at `shapebound:save`: blue points, best time, run count, and three
+  reserved boss currencies. It commits once at death and blocks overwrite on an unreadable record.
+  There is no active-run save or resume.
+- A read-only `/skills` page showing the saved balance, best time, run count, zero reserved boss
+  currency rows, and a locked generic 3 × 3 node map. No spending or upgrades.
+- A local settings provider with persisted reduced-motion and glow-intensity preferences. Glow
+  intensity controls every in-run surface and the static preview; presentation pages keep fixed
+  glows.
+- A pure seeded RNG, the generic versioned save envelope, and pure run, timeline, progression, and
+  enemy domains.
 - A Tailwind v4 design system aligned with the live Cyberpunk 2077 reference: yellow hero, black
   angular panels, acid/cyan/red palette, heavy condensed type.
 - Strict TypeScript, ESLint, Prettier, Vitest, and a pre-push quality gate.
 
 The provisional roguelike vision is in `docs/game-design.md`: survival blue points, color-coded
-bosses and currencies, and a node tree. Only movement and the player stat model are implemented.
-Combat, enemies, points, the skill tree, the HUD, and death are not. Run the `design-a-mechanic`
-pipeline before writing the next rules.
+bosses and currencies, and a node tree. Boss entities and fights, boss currency awards, node
+spending/upgrades, player attack/combat, a win condition, active-run persistence, audio, and a PWA
+are not implemented. Run the `design-a-mechanic` pipeline before writing the next rules.
 
 ## How it runs
 

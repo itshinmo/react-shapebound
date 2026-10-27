@@ -20,12 +20,14 @@ is a React + TypeScript single-page app built with Vite and React Router. The ga
 entirely with HTML and CSS — no canvas, no WebGL, no game engine dependency, no backend. It must
 keep working with no network connection after the assets load.
 
-The first playable slice is a landscape-only board with a square player confined to a static
-outlined container, keyboard/touch movement, and a pure player domain (movement, container bounds,
-health/shield). The container is the collision boundary; the screen is not. The roguelike loop —
-survival points, bosses, boss currencies, the node tree, combat, death, and the HUD — is not
-implemented. Do not invent those mechanics. Use the `design-a-mechanic` skill before writing the
-next rules code.
+The current build is a **survival run slice**. It has a landscape-only board with a square player
+confined to a static outlined container and keyboard/touch movement; a pure run domain (active-time
+clock, blue points at one per active second, timeline, five-minute boss markers, freeze set, death,
+one commit); viewport-space red square and orange triangle threats; a run HUD, pause menu, and
+run-over; and a read-only `/skills` page over the v1 progression record. The container is the
+collision boundary; the screen is not. Boss entities and fights, boss currency awards, node spending
+or upgrades, player attack, and a win condition are not implemented. Do not invent those mechanics.
+Use the `design-a-mechanic` skill before writing the next rules code.
 
 ## Commands
 
@@ -52,8 +54,8 @@ flags that are not documented here.
 
 ```text
 src/app       composition root: router, shell, presentation layout, providers, error boundary
-src/features  screens and feature-owned state (title, play, settings, not-found; play owns the gate)
-src/game      pure domain: RNG, save envelope, player rules
+src/features  screens and feature-owned state (title, play, settings, skills, not-found; play owns the run loop and gate)
+src/game      pure domain: RNG, save envelope, player, run, timeline, progression, enemy rules
 src/shared    cross-cutting primitives: UI, storage helpers, app constants
 ```
 
@@ -116,20 +118,20 @@ spec. When in doubt, ask. Gameplay design runs through `design-a-mechanic`; UI w
 This table converts "keep the docs updated" into a lookup. If you change something in the left
 column, review the right column **in the same change**.
 
-| If you change…                                 | Review…                                                                                                                                                  |
-| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| routes, screens, or navigation                 | `docs/architecture.md#routing`, `docs/components.md`, `.ai/memories/architecture.md`                                                                     |
-| game rules, state shape, or reducer actions    | `docs/architecture.md#game-domain`, `docs/game-design.md`, `decisions/ADR-003`, game tests                                                               |
-| save schema, migrations, or storage keys       | `docs/architecture.md#settings-and-local-state`, `docs/architecture.md#future-save-migrations`, `docs/runbook.md#save-recovery`, `src/game/save.test.ts` |
-| colors, type, spacing, motion, or utilities    | `docs/design-system.md`, `src/styles/global.css`, `.ai/memories/conventions.md`                                                                          |
-| a dependency                                   | an ADR for runtime `dependencies`; `README.md` stack; `AGENTS.md` commands                                                                               |
-| scripts, commands, or build config             | `AGENTS.md`, `README.md`, `docs/runbook.md`, `.github/workflows/ci.yml`                                                                                  |
-| ESLint, TypeScript, Prettier, or Vitest config | `docs/architecture.md#quality-gates`, `.ai/memories/conventions.md`                                                                                      |
-| layer boundaries or import rules               | `eslint.config.js`, `docs/architecture.md#layers`, `.ai/memories/architecture.md`                                                                        |
-| agent, skill, or template                      | `.ai/README.md`, `CONTRIBUTING.md`                                                                                                                       |
-| title, tagline, or version                     | `src/shared/config/app-config.ts`, `index.html`, `README.md`                                                                                             |
-| deployment or static hosting                   | `docs/runbook.md`, `README.md`, `.github/workflows/ci.yml`                                                                                               |
-| accessibility behavior                         | `docs/design-system.md#accessibility`, the non-negotiables below                                                                                         |
+| If you change…                                 | Review…                                                                                                                                                                       |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| routes, screens, or navigation                 | `docs/architecture.md#routing`, `docs/components.md`, `.ai/memories/architecture.md`                                                                                          |
+| game rules, state shape, or reducer actions    | `docs/architecture.md#game-domain`, `docs/game-design.md`, `decisions/ADR-003`, `decisions/ADR-011`, `decisions/ADR-012`, `decisions/ADR-013`, game tests                     |
+| save schema, migrations, or storage keys       | `docs/architecture.md#settings-and-local-state`, `docs/architecture.md#future-save-migrations`, `docs/runbook.md#save-recovery`, `decisions/ADR-011`, `src/game/save.test.ts` |
+| colors, type, spacing, motion, or utilities    | `docs/design-system.md`, `src/styles/global.css`, `decisions/ADR-014`, `decisions/ADR-015`, `.ai/memories/conventions.md`                                                     |
+| a dependency                                   | an ADR for runtime `dependencies`; `README.md` stack; `AGENTS.md` commands                                                                                                    |
+| scripts, commands, or build config             | `AGENTS.md`, `README.md`, `docs/runbook.md`, `.github/workflows/ci.yml`                                                                                                       |
+| ESLint, TypeScript, Prettier, or Vitest config | `docs/architecture.md#quality-gates`, `.ai/memories/conventions.md`                                                                                                           |
+| layer boundaries or import rules               | `eslint.config.js`, `docs/architecture.md#layers`, `.ai/memories/architecture.md`                                                                                             |
+| agent, skill, or template                      | `.ai/README.md`, `CONTRIBUTING.md`                                                                                                                                            |
+| title, tagline, or version                     | `src/shared/config/app-config.ts`, `index.html`, `README.md`                                                                                                                  |
+| deployment or static hosting                   | `docs/runbook.md`, `README.md`, `.github/workflows/ci.yml`                                                                                                                    |
+| accessibility behavior                         | `docs/design-system.md#accessibility`, the non-negotiables below                                                                                                              |
 
 ## Non-negotiables
 
@@ -158,10 +160,11 @@ column, review the right column **in the same change**.
   `prefers-reduced-motion` and the in-app reduced-motion setting. The reduce-motion switch thumb is
   the sole exception to the global transition disable: its 150ms position change is the control's
   state feedback, documented in `docs/design-system.md`.
-- The play surface is landscape-only and full-bleed. Do not add a portrait play layout, a header, or
-  a HUD to it without a design pass. The title, settings, and presentation pages stay responsive in
-  both orientations and use the shared `SiteHeader` rendered once by `PresentationLayout`; `/play`
-  is headerless and outside that layout.
+- The play surface is landscape-only and full-bleed and `/play` stays headerless. The run HUD is an
+  overlay with no reserved band; do not add a portrait play layout, a header, or a presentation-page
+  HUD. The title, settings, skills, and other presentation pages stay responsive in both orientations
+  and use the shared `SiteHeader` rendered once by `PresentationLayout`; `/play` is outside that
+  layout. Classify a new in-run surface against `docs/design-system.md` and ADR-015 before styling it.
 - Glow intensity controls every in-run surface: player, arena, joystick, enemy bodies, warning
   lanes/beams, timeline track and future/current nodes, boss banner, pause connector, run-over
   panel, and the static preview. Use `glow-player`, `glow-arena`, `glow-joystick`, `glow-enemy`,

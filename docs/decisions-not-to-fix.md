@@ -30,9 +30,9 @@ timers, and clocks are app/feature concerns. See `decisions/ADR-003-pure-game-do
 
 ## 4. No state-management library yet
 
-**Why:** the app currently has one small settings context and a pure domain placeholder. A library
-would add surface without a measured need. Use a reducer/context until performance or devtools demand
-otherwise. See `decisions/ADR-003-pure-game-domain.md`.
+**Why:** the app currently has one small settings context, a feature-owned run loop, and a pure game
+domain. A library would add surface without a measured need. Use a reducer/context until performance
+or devtools demand otherwise. See `decisions/ADR-003-pure-game-domain.md`.
 
 **Do not** add Zustand/Redux/XState/Jotai “to be ready”. Revisit with an ADR when there is a concrete
 problem.
@@ -54,21 +54,27 @@ runtime request to Google Fonts. See `decisions/ADR-005-tailwind-and-local-fonts
 
 ## 7. No PWA/service worker yet
 
-**Why:** there is no gameplay worth caching and no update UX. A service worker adds stale-cache
-failure modes. Offline currently means “no network after load”. See `decisions/ADR-001-vite-react-spa.md`.
+**Why:** there is no install/update UX and no cache-version strategy. A service worker adds
+stale-cache failure modes. Offline currently means “no network after load”. See
+`decisions/ADR-001-vite-react-spa.md`.
 
 **Do not** add `vite-plugin-pwa` or a hand-written service worker without an ADR and a cache-version
 strategy.
 
-## 8. The play screen is a movement slice, not a full game
+## 8. The play screen is a run slice, not a full game
 
-**Why:** the first delivered mechanic is movement on a landscape-only board. The domain has the
-player stats and health/shield model, but combat, enemies, points, the skill tree, the HUD, and death
-are not implemented. Presenting them as if they exist would misrepresent the product. See
-`docs/game-design.md` and [ADR-009](../decisions/ADR-009-static-player-container.md).
+**Why:** the delivered loop is movement on a landscape-only board plus a survival run: an active-time
+clock, blue points at one per active second, enemy threats, a HUD and timeline, five-minute boss
+markers, pause, death, a one-time progression commit, and a run-over. `/skills` is a read-only,
+locked preview. Boss entities and fights, boss currency awards, node spending/upgrades, player
+attack, a win condition, and active-run persistence are not implemented. Presenting them as if they
+exist would misrepresent the product. See `docs/game-design.md`,
+[ADR-011](../decisions/ADR-011-progression-save-v1.md),
+[ADR-012](../decisions/ADR-012-viewport-enemy-simulation.md), and
+[ADR-013](../decisions/ADR-013-portrait-pause.md).
 
-**Do not** add temporary combat, economy, or a HUD to “fill out” the board. Design the next mechanic
-with `design-a-mechanic` first.
+**Do not** add temporary boss combat, currency awards, unlock effects, or a fake win condition to
+“fill out” the run. Design the next mechanic with `design-a-mechanic` first.
 
 ## 9. The landing page is yellow-dominant
 
