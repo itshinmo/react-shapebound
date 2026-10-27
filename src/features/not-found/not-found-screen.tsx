@@ -13,8 +13,13 @@ export function NotFoundScreen() {
           <p className="font-mono text-[0.62rem] tracking-[0.24em] text-red uppercase">
             SIGNAL LOST // ROUTE UNKNOWN
           </p>
-          <h1 className="mt-6 font-hero text-[clamp(7rem,26vw,20rem)] leading-[0.78] tracking-[-0.03em] text-glitch">
-            404
+          <h1
+            aria-label="404"
+            className="mt-6 animate-glitch-flip font-hero text-[clamp(7rem,26vw,20rem)] leading-[0.78] tracking-[-0.03em]"
+          >
+            <span aria-hidden="true" className="block animate-glitch text-glitch">
+              404
+            </span>
           </h1>
           <p className="mt-4 max-w-md font-body text-lg leading-snug text-ink-inverse/70">
             This node does not exist in the local network.

@@ -74,6 +74,23 @@ describe('App routing', () => {
     expect(skillsLink).toHaveAttribute('href', '/skills');
   });
 
+  it('shows the completed module history on the title screen', () => {
+    render(<App />);
+
+    expect(screen.getByText('SYSTEM_MODULES // DEVELOPMENT_HISTORY')).toBeInTheDocument();
+
+    for (const name of [
+      'DOM + CSS',
+      'FIRST PLAYABLE',
+      'SURVIVAL LOOP',
+      'THREAT SYSTEM',
+      'PAUSE + RUN-OVER',
+      'LOCAL PROGRESSION',
+    ]) {
+      expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument();
+    }
+  });
+
   it('renders the play screen outside the presentation layout', () => {
     window.history.pushState({}, '', '/play');
 
@@ -83,11 +100,15 @@ describe('App routing', () => {
     expect(screen.queryByRole('banner')).not.toBeInTheDocument();
   });
 
-  it('renders the not-found screen for an unknown route', () => {
+  it('renders the not-found screen with a glitched, briefly flipping 404', () => {
     window.history.pushState({}, '', '/missing');
 
     render(<App />);
 
     expect(screen.getByText(/signal lost/i)).toBeInTheDocument();
+
+    const heading = screen.getByRole('heading', { level: 1, name: '404' });
+    expect(heading).toHaveClass('animate-glitch-flip');
+    expect(within(heading).getByText('404')).toHaveClass('animate-glitch');
   });
 });

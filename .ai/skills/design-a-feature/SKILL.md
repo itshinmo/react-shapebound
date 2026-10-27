@@ -35,8 +35,9 @@ description: Use when a feature needs UI — a screen, component, interaction, v
 - **No CSS Modules or CSS-in-JS.** Tailwind utilities + semantic theme tokens only.
 - **No business logic or gameplay rules.** Ask `game-designer` for rule-dependent states.
 - **No effects that harm contrast, focus, or motion accessibility.**
-- **No invented copy that implies gameplay that does not exist.** The play screen is a movement
-  slice; label it as such and do not imply combat, bosses, points, or a skill tree.
+- **No invented copy that implies gameplay that does not exist.** The play screen is a survival run
+  slice with points, a HUD, enemy threats, pause, and a run-over. Bosses and boss fights, node
+  upgrades/spending, player attack, and a win condition are not built; label them honestly.
 
 ## Output contract
 
