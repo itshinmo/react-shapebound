@@ -116,8 +116,8 @@ export function TitleScreen() {
                   </p>
                   <p className="mt-1 font-body text-sm leading-snug text-ink/80">
                     The play screen is a landscape-only survival run with a movable square, a timer,
-                    blue points, enemy threats, and a HUD. The skill tree page is a locked preview;
-                    upgrades, combat, and bosses are not built.
+                    blue points, enemy threats, the reflect shield, and a HUD. The local skill tree
+                    is interactive; bosses and the win condition are not built.
                   </p>
                 </div>
               </div>
@@ -231,8 +231,8 @@ export function TitleScreen() {
                 LOCAL PROGRESSION
               </h2>
               <p className="mt-2 font-body text-sm leading-snug text-muted">
-                A v1 local save with blue points, best time, and run count, plus a read-only locked
-                skill-tree preview.
+                A v2 local save with blue points, best time, run count, and captured upgrades, plus
+                the interactive add-only skill tree and Reset Skills.
               </p>
               <div className="mt-auto pt-4">
                 <span className="inline-block border border-acid px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-acid uppercase">
