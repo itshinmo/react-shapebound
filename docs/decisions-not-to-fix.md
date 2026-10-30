@@ -68,15 +68,17 @@ strategy.
 
 **Why:** the delivered loop is movement on a landscape-only board plus a survival run: an active-time
 clock, blue points at one per active second, enemy threats, a HUD and timeline, five-minute boss
-markers, pause, death, a one-time progression commit, and a run-over. `/skills` is a read-only,
-locked preview. Boss entities and fights, boss currency awards, node spending/upgrades, player
-attack, a win condition, and active-run persistence are not implemented. Presenting them as if they
-exist would misrepresent the product. See `docs/game-design.md`,
+markers, pause, death, a one-time progression commit, and a run-over. `/skills` is an interactive
+add-only tree with a confirmed reset. The shield's input/aim, line, charge ring, barrier notches, beam
+reflection, instant reflected beams, reflected-path previews, pierce kills, shape-matched explosions,
+and 5% barrier drops are implemented. Boss entities and fights, boss currency awards, direct player
+attack, a win condition, and active-run persistence are not. Presenting them as if they exist would
+misrepresent the product. See `docs/game-design.md`,
 [ADR-011](../decisions/ADR-011-progression-save-v1.md),
 [ADR-012](../decisions/ADR-012-viewport-enemy-simulation.md), and
 [ADR-013](../decisions/ADR-013-portrait-pause.md).
 
-**Do not** add temporary boss combat, currency awards, unlock effects, or a fake win condition to
+**Do not** add temporary boss combat, currency awards, a fake win condition, or a second kill source to
 “fill out” the run. Design the next mechanic with `design-a-mechanic` first.
 
 ## 9. The landing page is yellow-dominant

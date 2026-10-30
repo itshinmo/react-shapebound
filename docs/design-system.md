@@ -163,7 +163,8 @@ Run-specific utilities: `clip-diamond` clips a filled diamond for the point icon
 legend diamonds, and the boss banner diamond. `bg-warning-lane` is the orange diagonal hatch for the
 triangle warning lane; it is a non-color signal. `glow-enemy`, `glow-warning`, `glow-track`,
 `glow-hud`, and `glow-danger` are the in-run intensity utilities described under Play surface.
-`shadow-glow-track` is rejected and unused.
+`glow-track` is also used by the thin shield line, instant reflected beams, and preview lanes.
+`glow-enemy` colors the shape-matched explosion outline. `shadow-glow-track` is rejected and unused.
 
 ### Play surface
 
@@ -178,12 +179,32 @@ arena stays centered and is never scaled or moved to make room.
   game feature; the player sits inside it. Starting size is 320 px `[unverified]` and is intended to
   grow through skill-tree upgrades.
 - **Player:** an acid square (`bg-acid glow-player`) sized from player stats. Position is written as
-  a transform; do not animate its layout properties.
-- **Joystick:** cyan base and knob (`border-cyan/50`, `bg-cyan/10`, `bg-cyan`, `glow-joystick`).
-  Circular shapes are a functional exception to the clipped-surface rule; do not use the circle
-  treatment for ordinary panels or buttons.
-- **Enemy layer:** one `aria-hidden`, `pointer-events-none` overlay of 24 body nodes, 2 warning nodes,
-  and 2 beam nodes. The red square is `bg-red text-red glow-enemy`; the orange triangle is
+  a transform; do not animate its layout properties. A player-local charge ring (inset 4 px, 2 px
+  stroke, black-on-acid track/progress and centered digit) and up to three 5 × 2 px barrier notches
+  on the top edge are visual-only. Both are `aria-hidden`, have no independent glow, and are written
+  from discrete values; the ring arc is the only recharge feedback. A 120 ms `outline-2 outline-ink`
+  cue marks a barrier-absorbed hit and is omitted under reduced motion.
+- **Shield line, beams, previews, and explosions:** a viewport-space combat layer at `z-[25]`, above
+  the `z-20` joysticks and below the `z-30` HUD. The shield is one 64 × 2 px `bg-cyan text-cyan
+glow-track` bar; the midpoint sits `playerSize / 2 + 14` px from the player center and the bar is
+  tangent to that orbit. Position and rotation are written imperatively and never tweened. The shield
+  is hidden unless active. Up to six instant reflected beams are 12 px cyan `glow-track` lanes that
+  start at the **shield midpoint**, pass through every allowed target, and last 180 ms. They stop
+  after the last allowed target when the pierce budget is exhausted, or continue to the viewport edge
+  when pierce remains spare. Up to six preview lanes are dim 12 px cyan paths for charging warnings
+  that would reflect. Beam and preview nodes use a top-left transform origin so the shield midpoint is
+  the line's start, not its center. Explosions are hollow SVG outlines: a square for red squares, or
+  the triangle silhouette rotated to its aim for orange triangles. They start at the enemy size,
+  expand to 48 px, and fade over 450 ms in `text-red` or `text-orange` with `glow-enemy`. Beams,
+  previews, and explosions are clipped only by the viewport; explosions are suppressed under reduced
+  motion. The layer is allocated at mount, never grows, and is written at most once per frame.
+- **Joystick:** movement uses a cyan solid-ring base and round knob (`border-cyan/50`, `bg-cyan/10`,
+  `bg-cyan`, `glow-joystick`). The touch shield uses the non-color variant: dashed `border-cyan/50`
+  base with `bg-cyan/5` and a rotated-square diamond knob (`size-9`, 6 px cyan center,
+  `glow-joystick`). Circular shapes are a functional exception to the clipped-surface rule; do not use
+  the circle treatment for ordinary panels or buttons.
+- **Enemy layer:** one `aria-hidden`, `pointer-events-none` overlay of 36 body nodes, 6 warning nodes,
+  and 6 beam nodes. The red square is `bg-red text-red glow-enemy`; the orange triangle is
   `bg-orange text-orange glow-enemy` with a clipped triangular silhouette. The warning lane is
   hatched with `bg-warning-lane`, edged in orange, and carries `glow-warning`; the beam reuses the
   same rectangle with a brighter fill. Enemy nodes are positioned by transform and changed by
@@ -217,13 +238,16 @@ arena stays centered and is never scaled or moved to make room.
   board, HUD, and enemies stay visible underneath but are dimmed and inert. The panel shows final
   time, final blue points, and the commit state; `failed` adds `Retry save`, `unreadable` adds a
   `/settings` route, and `unavailable` explains the blocked storage without a settings repair.
-- **Glow intensity:** `glow-arena`, `glow-player`, `glow-joystick`, `glow-enemy` (both bodies),
-  `glow-warning` (lane and beam), `glow-track` (timeline line and future/current nodes), `glow-hud`
-  (banner and pause connector), and `glow-danger` (run-over) consume `--glow-intensity` (0–100,
-  default 100) and `--glow-scale` (1; the settings preview uses 0.5). Presentation pages — title,
-  settings chrome, `/skills`, and the site header — keep fixed `shadow-glow-*` glows. At intensity 0
-  every shape, border, text, warning hatch, playhead, timeline node, banner label, run-over frame,
-  and focus ring remains visible; only halo alpha reaches 0. Focus rings never consume a glow
+- **Glow intensity:** `glow-arena`, `glow-player`, `glow-joystick`, `glow-enemy` (bodies and
+  explosions), `glow-warning` (lane and beam), `glow-track` (timeline line, future/current nodes,
+  shield line, reflected beams, and preview lanes), `glow-hud` (banner and pause connector), and
+  `glow-danger` (run-over) consume `--glow-intensity` (0–100, default 100) and `--glow-scale` (1; the
+  settings preview uses 0.5). The charge ring and barrier notches deliberately have no independent
+  glow: they sit inside the already-glowing player, and a halo would reduce their legibility.
+  Presentation pages — title, settings chrome, `/skills`, and the site header — keep fixed
+  `shadow-glow-*` glows. At intensity 0 every shape, border, text, warning hatch, playhead, timeline
+  node, banner label, run-over frame, charge digit, notch, shield line, beam, preview, explosion
+  stroke, and focus ring remains visible; only halo alpha reaches 0. Focus rings never consume a glow
   utility.
 - **Overlays:** the portrait gate is a blocking `role="status"` overlay over the mounted board; it
   uses black/ink/cyan and does not reveal the run underneath. The touch start overlay uses the
@@ -238,11 +262,14 @@ arena stays centered and is never scaled or moved to make room.
 `/skills` is a presentation page: dark `bg-void` field, static `bg-aurora`, faint `bg-grid`, and the
 shared header. It uses fixed glows only and never reads `--glow-intensity`. The saved blue balance
 is the largest value, marked with a `survival` diamond and accompanied by the words `BLUE POINTS` and
-`SAVED BALANCE`. Best time and run count are smaller read-only values. The node map is a generic
-locked 3 × 3 schematic with `LOCKED` labels; nodes are not buttons and have no hover/active state.
-Boss currency rows are reserved and zero. The unreadable/unavailable states replace the balance row
-with one red panel and never show a fabricated balance. There is no count-up, reveal, or marquee, and
-the page is identical under reduced motion.
+`SAVED BALANCE`. Best time and run count are smaller read-only values. The tree has four branches in
+the order Barrier, Movement, Size, Reflect. Seven known nodes are plain bordered buttons with a
+`2/5`-style level, an exact current effect, a `+1 PT` cost, and a text level meter; five static
+`FUTURE NODE` placeholders stay non-interactive. `Reset Skills` is a separate footer action with an
+`aria-disabled` zero-level state and a native confirmation dialog. Boss currency rows are reserved
+and zero. The unreadable/unavailable states replace the balance row with one red panel, render a
+static `READ BLOCKED` tree, and never show a fabricated balance. There is no count-up, reveal, or
+marquee, and the page is identical under reduced motion.
 
 ### Settings controls
 
@@ -274,11 +301,13 @@ the page is identical under reduced motion.
   switch thumb keeps its 150ms transition in both directions as state feedback; all other
   transitions and animations are disabled.
 - Motion never carries information alone.
-- On `/play`, player, joystick, enemies, the live timer/timeline, and the boss banner are essential
-  gameplay or clock feedback, not decoration; reduced motion must not remove them. The timeline's
-  positional drift is the visual equivalent of the clock and is an approved exception. The boss
-  banner's decorative glitch strip is hidden under reduced motion; the warning lane keeps its hatch
-  and edge. The board has no ambient animation.
+- On `/play`, player, joystick, enemies, instant reflected beams, preview lanes, the live
+  timer/timeline, the shield line, the charge ring, and barrier notches are essential gameplay or
+  clock feedback, not decoration; reduced motion must not remove them. The timeline's positional
+  drift is the visual equivalent of the clock and is an approved exception. The boss banner's
+  decorative glitch strip, the 120 ms barrier-hit outline, and explosions are omitted under reduced
+  motion; the warning lane keeps its hatch and edge. The board has no ambient
+  animation.
 - The pause frame's width/transform transition and panel reveal are disabled under reduced motion;
   the reduce-motion switch thumb keeps its 150ms feedback as documented above.
 
@@ -304,9 +333,13 @@ the page is identical under reduced motion.
 - **Semantics:** one `h1` per screen, `button` for actions, `Link` for navigation, labels for inputs.
 - **Keyboard:** every action reachable; the settings switch is a real checkbox and the glow control
   is a real range input; skip control focuses `<main>` without changing the route.
-- **Play surface:** the board is a region with a visually hidden `h1` and movement instructions. The
-  rotate overlay is a `role="status"` live region. The player, container outline, joystick, and enemy
-  layer are `aria-hidden` visual representations; the domain state is the source of truth. The
+- **Play surface:** the board is a region with a visually hidden `h1` and movement/shield
+  instructions. The rotate overlay is a `role="status"` live region. The player, container outline,
+  joysticks, shield line, reflected beams, preview lanes, explosions, charge ring, barrier notches,
+  and enemy layer are `aria-hidden` visual representations; the domain state is the source of truth.
+  The instructions state keyboard movement, right-mouse shield, the lack of a keyboard parry,
+  first/second touch roles, beam reflection and instant beams, the charge ring, barrier notches, and
+  the arena boundary, with level-0/no-barrier conditional sentences. The
   settings glow preview is also `aria-hidden`; it adds no controls and carries no information that is
   not in the range value.
 - **Run HUD:** the timer is `role="timer"` with `aria-live="off"`; points are a labelled group, not a
@@ -318,12 +351,21 @@ the page is identical under reduced motion.
   and focus return. The pause menu's Skill Tree item is focusable and `aria-disabled` during a run.
   The run-over keeps its final points visible in every commit state and never presents a projected
   total as banked.
-- **Skills:** `/skills` has one `h1`; node rows are not interactive and say `LOCKED`; reserved
-  currency rows name the color; the page does not read `--glow-intensity`.
-- **Play start:** the touch start overlay uses a real `button`. On the acid button, use a cyan focus
-  outline so the ring remains visible against black.
+- **Skills:** `/skills` has one `h1`; seven known nodes are native add buttons and five placeholder
+  nodes are static `LOCKED` rows; Reset Skills is a native button with an in-app confirmation dialog,
+  explicit focus return, and disabled/`aria-disabled` empty state; reserved currency rows name the
+  color; the page does not read `--glow-intensity`.
+- **No keyboard parry.** The shield is engaged with the right mouse button or a second touch only.
+  There is no key binding and no focusable shield control. This is the author-approved accessibility
+  exception; movement, pause, and all menus remain keyboard operable. The `#play-instructions` text
+  states it explicitly.
+- **Play start:** the touch start overlay uses a real `button` and adds the line
+  `ONE FINGER MOVES // A SECOND FINGER AIMS THE SHIELD WHEN CHARGES ARE AVAILABLE.` On the acid
+  button, use a cyan focus outline so the ring remains visible against black.
 - **Reduced motion:** system preference and in-app setting both disable drift/flicker/glitch/
-  transitions, except the reduce-motion switch thumb feedback documented under Motion.
+  transitions, except the reduce-motion switch thumb feedback documented under Motion. The shield
+  line, charge ring, notches, player movement, reflected beams, and previews remain essential; the
+  120 ms hit cue and explosions are omitted.
 - **Decorative art:** hero SVG, grids, scanlines, halftone, and the play-surface decoration are
   `aria-hidden`.
 - **Color is not the only signal:** status chips include text (`ONLINE`, `PENDING`), not just color.

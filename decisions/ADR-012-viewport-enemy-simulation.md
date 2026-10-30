@@ -1,6 +1,6 @@
 # ADR-012 — Viewport-space enemy simulation with pure fixed-step pools and DOM node pooling
 
-- **Status:** Accepted
+- **Status:** Accepted (refined by ADR-018 for reflected-beam combat, triangle body contact, and the current node-pool counts)
 - **Date:** 2026-10-26
 - **Topic:** game domain / rendering / performance
 - **RFC:** —
