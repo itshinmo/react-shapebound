@@ -1,5 +1,9 @@
-import { isProgressionData, type ProgressionData, type ProgressionRead } from '@/game/progression';
-import { SAVE_STORAGE_KEY, parseSave, serializeSave } from '@/game/save';
+import {
+  parseProgressionSave,
+  type ProgressionData,
+  type ProgressionRead,
+} from '@/game/progression';
+import { SAVE_STORAGE_KEY, serializeSave } from '@/game/save';
 import type { SaveEnvelope } from '@/game/save';
 import { removeStorage } from '@/shared/lib/storage';
 import type { StorageLike } from '@/shared/lib/storage';
@@ -27,13 +31,7 @@ export function readProgression(storage: StorageLike | null): ProgressionRead {
     return { kind: 'none' };
   }
 
-  const parsed = parseSave(raw, isProgressionData);
-
-  if (!parsed.ok) {
-    return { kind: 'unreadable', reason: parsed.reason };
-  }
-
-  return { kind: 'valid', data: parsed.save.data };
+  return parseProgressionSave(raw);
 }
 
 export function writeProgression(
