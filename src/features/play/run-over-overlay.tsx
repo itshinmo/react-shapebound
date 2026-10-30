@@ -17,7 +17,7 @@ interface RunOverOverlayProps {
 
 const UNREADABLE_HEADING = 'SAVED PROGRESS COULD NOT BE READ — THIS RUN WAS NOT SAVED';
 const UNREADABLE_BODY =
-  "The existing local save is unreadable. Nothing was written or overwritten, so this run's points and time are not saved. Open Settings to reset local data; after the reset, the next death can write a fresh record. Navigating away (skill tree, settings, or title) or starting a new run discards this run's unsaved points.";
+  "The existing local save is unreadable. Nothing was written or overwritten, so this run's points and time are not saved. Open Settings to reset local data; after the reset, the next death can write a fresh record. Navigating away (skill tree, settings, or title) or starting a new run discards this run's unsaved points. A new run cannot start until the save is reset.";
 const UNAVAILABLE_HEADING = 'LOCAL STORAGE IS UNAVAILABLE — THIS RUN WAS NOT SAVED';
 const UNAVAILABLE_BODY =
   "This browser is blocking local storage. Nothing was written. A reset cannot repair an absent storage API. Navigating away (skill tree or title) or starting a new run discards this run's unsaved points.";
@@ -41,6 +41,7 @@ export function RunOverOverlay({
   const warningId = useId();
   const pendingReasonId = useId();
   const retrySaveHelperId = useId();
+  const retryHelperId = useId();
 
   const status = commit === 'none' ? 'pending' : commit;
   const isPending = status === 'pending';
@@ -244,14 +245,25 @@ export function RunOverOverlay({
             </div>
 
             <div className="mt-6 flex flex-col gap-2 min-[480px]:flex-row min-[480px]:flex-wrap">
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={onRetry}
-                className="w-full min-[480px]:w-auto"
-              >
-                Retry
-              </Button>
+              <div className="flex flex-col gap-1">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={onRetry}
+                  aria-describedby={warning === null ? undefined : `${retryHelperId} ${warningId}`}
+                  className="w-full min-[480px]:w-auto"
+                >
+                  Retry
+                </Button>
+                {warning === null ? null : (
+                  <p
+                    id={retryHelperId}
+                    className="font-mono text-[0.55rem] tracking-[0.16em] text-muted uppercase"
+                  >
+                    RE-CHECKS LOCAL SAVE // NEW RUN MAY BE BLOCKED
+                  </p>
+                )}
+              </div>
 
               <div className="flex flex-col gap-1">
                 <LinkButton

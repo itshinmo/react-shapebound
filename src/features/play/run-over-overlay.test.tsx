@@ -14,7 +14,7 @@ import type { ComponentProps } from 'react';
 
 const UNREADABLE_HEADING = 'SAVED PROGRESS COULD NOT BE READ — THIS RUN WAS NOT SAVED';
 const UNREADABLE_BODY =
-  "The existing local save is unreadable. Nothing was written or overwritten, so this run's points and time are not saved. Open Settings to reset local data; after the reset, the next death can write a fresh record. Navigating away (skill tree, settings, or title) or starting a new run discards this run's unsaved points.";
+  "The existing local save is unreadable. Nothing was written or overwritten, so this run's points and time are not saved. Open Settings to reset local data; after the reset, the next death can write a fresh record. Navigating away (skill tree, settings, or title) or starting a new run discards this run's unsaved points. A new run cannot start until the save is reset.";
 const UNAVAILABLE_HEADING = 'LOCAL STORAGE IS UNAVAILABLE — THIS RUN WAS NOT SAVED';
 const UNAVAILABLE_BODY =
   "This browser is blocking local storage. Nothing was written. A reset cannot repair an absent storage API. Navigating away (skill tree or title) or starting a new run discards this run's unsaved points.";
@@ -221,12 +221,16 @@ describe('RunOverOverlay', () => {
     const skillTree = screen.getByRole('link', { name: 'Open Skill Tree' });
     const settings = screen.getByRole('link', { name: 'Open Settings' });
 
+    const retry = screen.getByRole('button', { name: 'Retry' });
+    const helper = screen.getByText('RE-CHECKS LOCAL SAVE // NEW RUN MAY BE BLOCKED');
+
     expect(warning).toHaveTextContent(UNREADABLE_HEADING);
     expect(warning).toHaveTextContent(UNREADABLE_BODY);
     expect(screen.getByText('NOT SAVED // UNREADABLE SAVE')).toBeInTheDocument();
     expect(skillTree).toHaveAttribute('aria-describedby', warning.id);
     expect(settings).toHaveAttribute('href', '/settings');
     expect(settings).toHaveAttribute('aria-describedby', warning.id);
+    expect(retry).toHaveAttribute('aria-describedby', `${helper.id} ${warning.id}`);
     expect(screen.getByText('RESET IN SETTINGS')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Retry save' })).not.toBeInTheDocument();
     expect(screen.queryByText(/SAVED BALANCE/)).not.toBeInTheDocument();
@@ -238,15 +242,30 @@ describe('RunOverOverlay', () => {
 
     const warning = screen.getByRole('alert');
     const skillTree = screen.getByRole('link', { name: 'Open Skill Tree' });
+    const retry = screen.getByRole('button', { name: 'Retry' });
+    const helper = screen.getByText('RE-CHECKS LOCAL SAVE // NEW RUN MAY BE BLOCKED');
 
     expect(warning).toHaveTextContent(UNAVAILABLE_HEADING);
     expect(warning).toHaveTextContent(UNAVAILABLE_BODY);
     expect(screen.getByText('NOT SAVED // STORAGE UNAVAILABLE')).toBeInTheDocument();
     expect(skillTree).toHaveAttribute('aria-describedby', warning.id);
+    expect(retry).toHaveAttribute('aria-describedby', `${helper.id} ${warning.id}`);
     expect(screen.queryByRole('link', { name: 'Open Settings' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Retry save' })).not.toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Blue points' })).toBeInTheDocument();
   });
+
+  it.each(['saved', 'failed'] as const)(
+    'does not add the new-run helper in the %s commit state',
+    (commit) => {
+      renderOverlay({ commit, committedData: commit === 'saved' ? makeData(1) : null });
+
+      expect(
+        screen.queryByText('RE-CHECKS LOCAL SAVE // NEW RUN MAY BE BLOCKED'),
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Retry' })).not.toHaveAttribute('aria-describedby');
+    },
+  );
 
   it('wires Retry, Open Skill Tree, and Back to title', async () => {
     const user = userEvent.setup();
