@@ -32,6 +32,6 @@ See `.ai/skills/write-an-rfc/SKILL.md` for the full procedure.
 
 ## Index
 
-| RFC        | Title | Status | Date |
-| ---------- | ----- | ------ | ---- |
-| _None yet_ | —     | —      | —    |
+| RFC                                              | Title                         | Status   | Date       |
+| ------------------------------------------------ | ----------------------------- | -------- | ---------- |
+| [RFC-001](archived/RFC-001-skill-tree-respec.md) | Skill tree respec interaction | Rejected | 2026-10-29 |
