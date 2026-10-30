@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { buttonClassName } from './button-styles';
 
 import type { ButtonSize, ButtonVariant } from './button-styles';
-import type { ButtonHTMLAttributes, ComponentProps, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ComponentProps, ReactNode, Ref } from 'react';
 
 interface ButtonStyleProps {
   readonly variant?: ButtonVariant;
@@ -12,16 +12,27 @@ interface ButtonStyleProps {
   readonly children: ReactNode;
 }
 
+type ButtonProps = ButtonStyleProps &
+  Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'ref'> & {
+    readonly ref?: Ref<HTMLButtonElement>;
+  };
+
 export function Button({
   variant = 'primary',
   size = 'md',
   className,
   type = 'button',
+  ref,
   children,
   ...props
-}: ButtonStyleProps & ButtonHTMLAttributes<HTMLButtonElement>) {
+}: ButtonProps) {
   return (
-    <button type={type} className={buttonClassName({ variant, size, className })} {...props}>
+    <button
+      ref={ref}
+      type={type}
+      className={buttonClassName({ variant, size, className })}
+      {...props}
+    >
       {children}
     </button>
   );
