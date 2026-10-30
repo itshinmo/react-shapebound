@@ -68,24 +68,32 @@ Local data lives in `localStorage`:
 
 ```text
 shapebound:settings   { version: 2, reducedMotion: boolean, glowIntensity: 0-100 }
-shapebound:save       { schemaVersion: 1, savedAt: ISO string, data: ProgressionData }
+shapebound:save       { schemaVersion: 2, savedAt: ISO string, data: ProgressionData }
 ```
 
 `ProgressionData` is exactly `{ bluePoints, bestTimeMs, runCount, bossCurrencies: { purple, green,
-orange } }`. It is the progression record, not an active run: the current seed, clock, points, enemy
-state, and commit latch are in memory only. There is no mid-run save or resume.
+orange }, upgrades: { barrierCount, movementSpeed, playerSize, arenaSize, reflectCharges,
+reflectChargeSpeed, laserPierce } }`. It is the progression record, not an active run: the current
+seed, clock, points, enemy state, and commit latch are in memory only. There is no mid-run save or
+resume.
 
-- **Missing key** (`none`): base values are all zero. This is not an error. The first committed death
-  writes a fresh record, even for a zero-point run.
-- **Valid record**: the saved balance, best time, run count, and boss currencies are used.
+- **Missing key** (`none`): base values are all zero, including all seven upgrade levels. This is not
+  an error. The first committed death writes a fresh v2 record, even for a zero-point run.
+- **Valid v2 record**: the saved balance, best time, run count, boss currencies, and upgrade levels are
+  used. `/skills` can purchase levels or Reset Skills; a purchase or reset writes one full v2 envelope.
+- **Valid v1 record**: readable. It is migrated in memory to v2 with all seven levels at zero and the
+  four base fields preserved. Reading does not rewrite it; the stored bytes stay schema 1 until the
+  next committed death or tree purchase/reset writes v2.
 - **Unreadable record** (`invalid-json`, `invalid-envelope`, `invalid-data`, or
-  `unsupported-version`): nothing is written or overwritten, and the run-over offers `/settings` as
-  the recovery route. Later deaths remain unreadable until the record is cleared.
-- **Storage unavailable**: the browser is blocking storage. Nothing is written; `/settings` reset
-  cannot repair an absent storage API, so it is not presented as the fix.
+  `unsupported-version`): nothing is written or overwritten. A new run is blocked by the `/play` save
+  gate, which offers `/settings` as the recovery route. `/skills` shows its read-error panel and no
+  fabricated values. Later attempts remain blocked until the record is cleared.
+- **Storage unavailable**: the browser is blocking storage. Nothing is written or started;
+  `/settings` reset cannot repair an absent storage API, so it is not presented as the fix.
 - **Failed write** after a valid read: the run-over shows `SAVE FAILED — POINTS NOT SAVED` and a
   `Retry save` control. Retry writes the same latched envelope; it never adds the run twice. Leaving
-  discards the unsaved points.
+  discards the unsaved points. A failed tree write leaves the displayed levels and balance unchanged
+  and the next activation re-reads.
 
 To recover:
 
@@ -95,10 +103,15 @@ To recover:
 
 A reset removes both `shapebound:settings` and `shapebound:save`, resets settings to system defaults,
 writes the settings defaults again, and leaves the save key absent. `/skills` then shows the zero
-base and the next committed death writes a fresh v1 record. The pause-menu config cannot reset local
+base and the next committed death writes a fresh v2 record. The pause-menu config cannot reset local
 data. A failed settings write (quota, private mode) is reported as `false` and does not crash the app;
 the session continues without persistence. Version 1 settings records are migrated on read with
 `glowIntensity: 100` and rewritten as version 2.
+
+**Reset Skills vs local-data reset.** Reset Skills on `/skills` is an in-game transaction: it clears
+all seven upgrade levels, refunds their sum (capped at `MAX_BLUE_POINTS`), and preserves best time, run
+count, and boss currencies. It does not remove the save key or settings. **Settings → Clear local
+data** removes the whole save and every upgrade. Do not use one as the other.
 
 ## Troubleshooting
 
@@ -121,17 +134,19 @@ works without it; add imports through the `@/` alias.
 into `dist/assets`. Do not replace them with a Google Fonts URL — that breaks the offline rule.
 
 **Storage is unavailable.** Private/locked-down contexts can throw on access. Settings fall back to
-system defaults and skip persistence; the progression read is `unavailable`, so a death writes
-nothing and the run-over says the run was not saved. This is expected, not a crash. A reset cannot
-repair an absent storage API.
+system defaults and skip persistence; the progression read is `unavailable`, so a new run is blocked
+by the `/play` save gate and a death in an already-started run cannot be committed. This is expected,
+not a crash. A reset cannot repair an absent storage API.
 
 **Glow intensity does not change the header, buttons, or panels.** That is intentional. The setting
-drives every in-run surface: `glow-arena`, `glow-player`, `glow-joystick`, `glow-enemy` (both enemy
-bodies), `glow-warning` (warning lane and beam), `glow-track` (timeline line and future/current
-nodes), `glow-hud` (boss banner and pause connector), `glow-danger` (run-over panel), plus the static
-settings/pause preview. The HUD timer/points/legend/scrim, menu button, pause dialog frame/buttons,
-and all focus rings stay fixed or unglowed. Presentation pages keep fixed `shadow-glow-*` tokens and
-never read the variable.
+drives every in-run surface: `glow-arena`, `glow-player`, `glow-joystick`, `glow-enemy` (bodies and
+explosions), `glow-warning` (warning lane and beam), `glow-track` (timeline, shield line, instant
+reflected beams, and previews), `glow-hud` (boss banner and pause connector), `glow-danger` (run-over
+panel), plus
+the static settings/pause preview. The charge ring and barrier notches intentionally have no
+independent glow. The HUD timer/points/legend/scrim, menu button, pause dialog frame/buttons, and all
+focus rings stay fixed or unglowed. Presentation pages keep fixed `shadow-glow-*` tokens and never
+read the variable.
 
 **The reduce-motion switch still moves while reduced motion is on.** Its 150ms thumb feedback is the
 sole exception; the control's position is its state feedback. All other animations and transitions
@@ -164,8 +179,42 @@ The Pages artifact deploy does not depend on it. Check whether `gh-pages` is pro
 workflow token lacks `contents: write`; the site is still current if the deploy job succeeded.
 
 **The joystick does not appear.** It is touch/pen only, and only after the run starts. A mouse click
-does not create one; a second simultaneous touch is ignored. Releasing or cancelling the pointer
-hides it and zeroes movement. It also clears on window blur or a hidden tab.
+does not create one. The first non-mouse pointer is movement. If the shield joystick does not appear,
+the run may be at Reflect Charges level 0, have 0 current charges, already have a shield pointer
+latched, or be in a spent press; release and re-touch after a charge exists. A third simultaneous
+pointer is ignored. Releasing or cancelling a pointer hides that joystick; releasing movement keeps a
+latched shield. Both clear on window blur, hidden tab, pause, portrait, and death.
+
+**The right mouse button does not raise the shield.** The run needs Reflect Charges level 1+ and a
+current charge. Hold the right button on the play surface, not on the pause button or the HUD strip;
+right-clicking a HUD control does not engage or pause. A left click does nothing. Release, window
+blur, hidden tab, pause, portrait, and death disengage, and resuming needs a new press. There is no
+keyboard parry by design. The play surface suppresses its context menu.
+
+**The shield line does not reflect an orange beam.** The run needs Reflect Charges level 1+ and a
+current charge. The warning lane must approach the shield's **outward** face and contact it before
+the player hurtbox; an exact tie reflects, while a player-first contact damages. A near-parallel beam
+(`abs(d·n) < 0.35`) is grazing and is not reflected. On a successful parry the original orange beam
+stops at the shield, an instant 12 px cyan beam starts at the **shield midpoint**, one charge is spent, and
+the beam kills up to `1 + Laser Pierce` normal enemies in distance order. It passes through all allowed
+targets; if the budget is exhausted it stops after the last allowed kill, otherwise it continues to the
+viewport edge. It does not travel over time, and does not damage the player or a boss. If the last
+charge is spent, release and press again after the ring grants a charge; a held input stays `spent`
+and does not re-arm.
+
+**No preview appears before a beam.** Previews appear only for a charging triangle warning whose lane
+would reflect: active shield, an available charge, outward face, shield contact before the player, and
+non-grazing. The dim lanes show the predicted path to the last allowed target or the viewport edge.
+Release, freeze, death, a non-reflecting aim, or the last charge hides them.
+
+**A triangle hit me after I reflected its laser.** The shield reflects the laser only; it does not
+block triangle body contact. Triangle body contact deals one damage once per activation, consuming
+barrier first. Reflecting a beam does not make the player immune to the body.
+
+**A kill did not refill a barrier notch.** A reflected kill rolls the dedicated 5% `[unverified]`
+barrier-drop stream. The roll happens at max barrier and at Barrier Count 0, but it may grant zero,
+and a drop cannot absorb a hit that already landed in the same step. Barrier does not regenerate;
+the drop is the only in-run gain.
 
 **The run keeps freezing, or the pause menu opens by itself.** Freeze reasons stack: `pause`,
 `hidden`, `portrait`, and `focus`. The pause button or Escape adds `pause`; only Resume removes it. A
@@ -189,12 +238,28 @@ that. `pending` is the commit in progress. See [Save recovery](#save-recovery).
 **`/skills` shows no points after a completed run.** The page reads only the committed save. A
 missing record, a failed/unreadable/unavailable commit, or a run that was restarted before death
 leaves no new balance. Check the run-over status first. `/skills` never shows the current run's
-unsaved points. Its `START A RUN` footer link appears only for a readable zero balance; with a
-positive balance, start a run from the header or title.
+unsaved points. Readable states show `START A RUN`. An unreadable save shows the `/settings` recovery
+route and Back to title; an unavailable save shows Back to title only, because a reset cannot repair
+blocked storage.
 
 **`/skills` shows zero best time or run count with a zero balance.** The empty state is not an
 error. Best time and run count remain the real saved values even when the blue balance is zero. A
-reset clears both keys, so all three return to zero.
+local-data reset clears both keys, so all three return to zero; Reset Skills preserves both.
+
+**A node will not raise a level.** Every level costs exactly 1 blue point. At node max the card shows
+`MAX` and announces the maximum; at zero balance it announces the missing point. Neither writes.
+Purchases are add-only; there is no minus/right-click/long-press removal. To change a build, use
+`Reset Skills`, confirm, and redistribute the refunded points.
+
+**A tree purchase or reset says the save failed.** The stored record is unchanged and the displayed
+levels/balance stay at the old values. Do not repeat it blindly: the next activation performs a fresh
+read. If the save is unreadable, use `/settings` local-data reset (which clears the whole tree); if
+storage is unavailable, the browser is blocking persistence and a reset cannot repair it.
+
+**`/play` shows a save gate instead of the board.** A new run requires a readable save. `SAVED
+PROGRESS COULD NOT BE READ` points to `/settings`; `LOCAL STORAGE IS UNAVAILABLE` has no repair, only
+Back to title. Retry and pause Restart run the same gate and redirect here instead of starting a
+base-loadout run. No run, player, enemy world, or loadout exists while the gate is shown.
 
 **The Skill Tree item in the pause menu does nothing.** It is intentionally locked during a run
 (`aria-disabled`, reason `AVAILABLE AFTER THE RUN`). Finish the run or leave to `/skills`.
@@ -204,10 +269,11 @@ boss entity, fight, attack, health, defeat, or currency award in this slice; the
 through the banner.
 
 **The player container is off-screen or the wrong size.** The player container is a static, centered
-square (`PLAYER_CONTAINER_SIZE` in `src/game/player.ts`, currently 320 px). The screen is not a
-collision boundary; on a very small viewport the container may exceed the safe playfield. Adjust the
-starting size or the supported landscape viewport floor. The player should stop at the container
-outline; if it crosses, the container bounds are wrong.
+square sized from the captured `RunLoadout` (`arenaSize`, 320–420 px by Arena Size level). The screen
+is not a collision boundary; on a very small viewport the configured square may exceed the measured
+playfield, so the player clamps to the smaller measured inner box. Check the saved upgrade levels and
+the supported landscape viewport floor. The player should stop at the container outline; if it
+crosses, the container bounds are wrong.
 
 **Testing landscape on desktop.** Use DevTools device emulation or resize the window. On `/play`, a
 portrait viewport should show the blocking overlay while the run stays mounted and frozen; the title,
@@ -246,8 +312,7 @@ pointer file. Do not copy the contents.
 ## Not included yet
 
 - Boss entities, boss fights, boss attacks, boss health, boss defeat, and boss currency awards.
-- Node unlocking, upgrades, costs, respec, and spending.
-- Player attack, aiming, enemy health, and a win condition.
+- Direct player attack, aiming, enemy health beyond an instant reflected-beam kill, and a win condition.
 - Active-run persistence, mid-run save, resume, run history, and a saved run seed/cursor.
 - PWA/service worker and install prompt.
 - E2E browser tests.

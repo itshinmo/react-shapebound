@@ -1,6 +1,6 @@
 ---
 description: Naming, imports, Tailwind, testing, comment, and accessibility conventions. Read before writing any code or CSS.
-last-verified: 2026-10-27
+last-verified: 2026-10-30
 ---
 
 # Conventions memory
@@ -35,9 +35,16 @@ The authoritative rules are in `AGENTS.md#non-negotiables`, `docs/architecture.m
 - The run loop owns a 50 ms frame clamp, a retained sub-millisecond remainder, a 20 ms enemy
   accumulator (max 3 steps/frame), and the freeze-set gate. It calls pure domain functions; never
   duplicate the rules in the feature.
+- A new run (initial, Retry, Restart) reads the save first and derives one `RunLoadout`; only
+  `none`/`valid` mount the play surface. `unreadable`/`unavailable` show `SaveGate` with no board.
+  Never re-derive the loadout mid-run.
 - The play surface stays mounted in portrait. The gate is an overlay; the run is not respawned.
 - Player bounds are the static container's inner box; the screen is not a collision boundary. Enemy
-  collision is in viewport space via the projected player hurtbox.
+  collision is in viewport space via the projected player hurtbox. Player/arena sizes come from the
+  loadout, not duplicated constants.
+- `/skills` actions are one read, one pure transaction, one full-record write. Update UI state only
+  after `write` returns true; block further actions while one is in flight; never optimistically show
+  a level or balance.
 
 ## Tailwind
 
@@ -59,22 +66,30 @@ The authoritative rules are in `AGENTS.md#non-negotiables`, `docs/architecture.m
   `boss-orange` are boss identity only; `orange` is the triangle threat; `track` is the timeline
   line only.
 - Glow intensity is in-run scope: play field, enemies, warning lane/beam, timeline, boss banner,
-  pause connector, and run-over, plus the static `GlowPreview`. Presentation pages, HUD text/legend/
-  scrim, menu button, pause frame/buttons, and focus rings stay fixed or unglowed. `shadow-glow-track`
-  is rejected. Use `glow-track`, `glow-hud`, and `glow-danger` only on decorative wrappers, never
-  focusable controls.
+  pause connector, run-over, shield line, instant reflected beams, preview lanes, explosions, and the
+  static `GlowPreview`. The charge ring and barrier notches intentionally have no independent glow.
+  Presentation pages, HUD text/legend/scrim, menu button, pause frame/buttons, and focus rings stay
+  fixed or unglowed. `shadow-glow-track` is rejected. Use `glow-track`, `glow-hud`, and `glow-danger`
+  only on decorative wrappers, never focusable controls.
 - The play surface is landscape-only: black + faint grid, a static outline container, no header, and
-  a HUD overlay with no reserved band. Title, settings, skills, and not-found are responsive. Joystick circles
-  are the functional exception to the clipped-surface rule.
+  a HUD overlay with no reserved band. Title, settings, skills, and not-found are responsive. Joystick
+  circles are the functional exception to the clipped-surface rule. The shield line, instant beams,
+  previews, and explosions share a viewport-space `z-[25]` layer above the `z-20` joysticks and below
+  the `z-30` HUD; the ring/notches are player-local.
 
 ## Tests
 
 - Vitest + Testing Library. Query by role, label, or text first; test IDs are a last resort.
 - Test behavior and domain invariants, not implementation details.
 - New domain logic needs unit tests. New interaction needs a component test.
-- Player, run, timeline, progression, save, RNG, and enemy rules are unit-tested. HUD, enemy layer,
-  pause, run-over, skills, landscape gate, and play screen have component tests. Device-only
-  orientation/fullscreen behavior is manual and marked `[unverified]`.
+- Player (barrier), reflect charge/recharge/geometry, combat (reflection, instant targeting,
+  previews, drops), run, timeline, progression (v1/v2 migration, purchase, reset), upgrades/loadout,
+  save, RNG, and enemy rules are unit-tested. HUD, enemy layer, combat layer, pause, run-over, the
+  interactive skills tree, landscape gate, save gate, play screen, player ring/notches, mouse shield,
+  and dual-touch controls have component/hook tests. Literal v1 fixtures stay in tests; do not build
+  v1 with `createSave` now that it stamps 2. Device-only orientation/fullscreen behavior is manual and
+  marked `[unverified]`. Explosion shape/timing/reuse and reduced-motion suppression are covered in
+  the combat layer; real-device pointer capture and live OS reduced-motion changes remain manual.
 - Never weaken an assertion to go green.
 
 ## Comments and docs
@@ -91,5 +106,9 @@ The authoritative rules are in `AGENTS.md#non-negotiables`, `docs/architecture.m
   updates only on membership/state changes. Modals trap and return focus.
 - Respect `prefers-reduced-motion` and the in-app setting, except the reduce-motion switch's 150ms
   thumb feedback, which remains as the control's own state feedback. Essential gameplay/clock motion
-  (player, enemies, timer, timeline) remains.
+  (player, enemies, timer, timeline, shield line, instant beams, previews, charge ring, notches)
+  remains; the 120 ms barrier-hit outline and explosions are omitted under reduced motion.
+- There is no keyboard parry. The shield is right-mouse or second-touch only; movement, pause, and
+  menus remain keyboard operable. The visual shield/ring/notches/beams/previews/explosions add no tab
+  stops.
 - Maintain contrast; decorative effects must not obscure content. Color is never the only signal.

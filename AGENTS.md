@@ -25,10 +25,15 @@ The current build is a **survival run slice**. It has a landscape-only board wit
 confined to a static outlined container and keyboard/touch movement; a pure run domain (active-time
 clock, blue points at one per active second, timeline, five-minute boss markers, freeze set, death,
 one commit); viewport-space red square and orange triangle threats; a run HUD, pause menu, and
-run-over; and a read-only `/skills` page over the v1 progression record. The container is the
-collision boundary; the screen is not. Boss entities and fights, boss currency awards, node spending
-or upgrades, player attack, and a win condition are not implemented. Do not invent those mechanics.
-Use the `design-a-mechanic` skill before writing the next rules code.
+run-over; a v2 progression save with a linear v1 read migration; a captured run loadout; an
+interactive add-only `/skills` tree with Reset Skills; and the reflect shield's input/aim, cyan
+shield line, charge ring, barrier notches, beam reflection, instant reflected beams, reflected-path
+previews, explosions, and the 5% barrier drop. Reflected beams can kill normal enemies. A new run
+(initial, Retry, Restart) requires a `none` or `valid` save and shows a blocking save gate otherwise.
+The container is the collision boundary; the screen is not. The player domain has a barrier buffer
+shown by player-local notches. Orange triangle body contact also damages the player. Boss entities
+and fights, boss currency awards, direct player attack, and a win condition are not implemented. Do
+not invent those mechanics. Use the `design-a-mechanic` skill before writing the next rules code.
 
 ## Commands
 
@@ -56,7 +61,7 @@ flags that are not documented here.
 ```text
 src/app       composition root: router, shell, presentation layout, providers, error boundary
 src/features  screens and feature-owned state (title, play, settings, skills, not-found; play owns the run loop and gate)
-src/game      pure domain: RNG, save envelope, player, run, timeline, progression, enemy rules
+src/game      pure domain: RNG, save envelope, player, run, timeline, progression, upgrades, enemy rules
 src/shared    cross-cutting primitives: UI, storage helpers, app constants
 ```
 
@@ -172,10 +177,12 @@ column, review the right column **in the same change**.
   layout. Classify a new in-run surface against `docs/design-system.md` and ADR-015 before styling it.
 - Glow intensity controls every in-run surface: player, arena, joystick, enemy bodies, warning
   lanes/beams, timeline track and future/current nodes, boss banner, pause connector, run-over
-  panel, and the static preview. Use `glow-player`, `glow-arena`, `glow-joystick`, `glow-enemy`,
-  `glow-warning`, `glow-track`, `glow-hud`, and `glow-danger`. Presentation pages, timer/points/legend/
-  scrim, the menu button, pause dialog frame/buttons, and all focus rings stay fixed or unglowed.
-  Never add `shadow-glow-track` or a fixed ambient glow to an in-run surface.
+  panel, shield line, instant reflected beams, reflected-path previews, explosions, and the static
+  preview. Use `glow-player`, `glow-arena`, `glow-joystick`, `glow-enemy`, `glow-warning`,
+  `glow-track`, `glow-hud`, and `glow-danger`. The charge ring and barrier notches have no independent
+  glow. Presentation pages,
+  timer/points/legend/scrim, the menu button, pause dialog frame/buttons, and all focus rings stay
+  fixed or unglowed. Never add `shadow-glow-track` or a fixed ambient glow to an in-run surface.
 - Clipped surfaces use `clip-border` with `--clip-border` and `--clip-fill`, never `border-*` or
   `bg-*`. The element background is the border; an inset `::before` paints the fill with `clip-path:
 inherit`. This is the canonical border treatment for buttons, panels, the site header, the title
