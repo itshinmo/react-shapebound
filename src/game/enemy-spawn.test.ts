@@ -98,27 +98,26 @@ describe('isViewportSpawnable', () => {
 });
 
 describe('difficulty targets', () => {
-  it('keeps one red target before 45 seconds and grows every 40 seconds', () => {
+  it('keeps one red target before 45 seconds and grows every 40 seconds to 24', () => {
     expect(redTargetAtMs(0)).toBe(1);
     expect(redTargetAtMs(44_999)).toBe(1);
     expect(redTargetAtMs(45_000)).toBe(1);
     expect(redTargetAtMs(84_999)).toBe(1);
     expect(redTargetAtMs(85_000)).toBe(2);
     expect(redTargetAtMs(485_000)).toBe(12);
-    expect(redTargetAtMs(600_000)).toBe(12);
-    expect(redTargetAtMs(10_000_000)).toBe(12);
+    expect(redTargetAtMs(600_000)).toBe(14);
+    expect(redTargetAtMs(10_000_000)).toBe(24);
   });
 
-  it('keeps zero triangle targets before 45 seconds and grows every 90 seconds', () => {
-    expect(triangleTargetAtMs(0)).toBe(0);
-    expect(triangleTargetAtMs(44_999)).toBe(0);
+  it('matches the red target schedule and caps triangles at twelve', () => {
+    expect(triangleTargetAtMs(0)).toBe(1);
+    expect(triangleTargetAtMs(44_999)).toBe(1);
     expect(triangleTargetAtMs(45_000)).toBe(1);
-    expect(triangleTargetAtMs(134_999)).toBe(1);
-    expect(triangleTargetAtMs(135_000)).toBe(2);
-    expect(triangleTargetAtMs(300_000)).toBe(3);
-    expect(triangleTargetAtMs(405_000)).toBe(5);
-    expect(triangleTargetAtMs(900_000)).toBe(5);
-    expect(triangleTargetAtMs(10_000_000)).toBe(5);
+    expect(triangleTargetAtMs(84_999)).toBe(1);
+    expect(triangleTargetAtMs(85_000)).toBe(2);
+    expect(triangleTargetAtMs(205_000)).toBe(5);
+    expect(triangleTargetAtMs(600_000)).toBe(12);
+    expect(triangleTargetAtMs(10_000_000)).toBe(12);
   });
 });
 

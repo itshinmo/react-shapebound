@@ -24,7 +24,7 @@ const LANE: BeamLane = {
 function createWorld(slots: readonly (EnemySlot | null)[]): EnemyWorld {
   return {
     ...createEnemyWorld(1),
-    slots: Array.from({ length: 24 }, (_, index) => slots[index] ?? null),
+    slots: Array.from({ length: 36 }, (_, index) => slots[index] ?? null),
   };
 }
 
@@ -66,6 +66,7 @@ function createTriangle(overrides: Partial<TriangleSlot> = {}): TriangleSlot {
     lane: null,
     sizePx: 40,
     enteredViewport: true,
+    damagedPlayer: false,
     ...overrides,
   };
 }
@@ -101,7 +102,7 @@ function renderLayer() {
 }
 
 describe('EnemyLayer', () => {
-  it('preallocates 24 bodies, 2 warnings, and 2 beams in an aria-hidden layer', () => {
+  it('preallocates 36 bodies, 6 warnings, and 6 beams in an aria-hidden layer', () => {
     renderLayer();
 
     const layer = screen.getByTestId('enemy-layer');
@@ -116,9 +117,9 @@ describe('EnemyLayer', () => {
     expect(layer.className).toContain('z-20');
     expect(layer.className).toContain('overflow-hidden');
     expect(layer).not.toHaveAttribute('tabindex');
-    expect(bodies).toHaveLength(24);
-    expect(warnings).toHaveLength(2);
-    expect(beams).toHaveLength(2);
+    expect(bodies).toHaveLength(36);
+    expect(warnings).toHaveLength(6);
+    expect(beams).toHaveLength(6);
 
     for (const body of bodies) {
       expect(body.className).toContain('opacity-0');
@@ -134,6 +135,49 @@ describe('EnemyLayer', () => {
       expect(beam.className).toContain('opacity-0');
       expect(beam).not.toHaveAttribute('tabindex');
     }
+  });
+
+  it('truncates a reflected slot beam at the shield while keeping the other beam lane', () => {
+    const { handleRef } = renderLayer();
+    const secondLane: BeamLane = { ...LANE, originX: 120, originY: 260 };
+    const world = createWorld([
+      createTriangle({
+        id: 4,
+        phase: 'firing',
+        arrivedAtMs: 45_000,
+        beamEndsAtMs: 46_735,
+        lane: LANE,
+      }),
+      createTriangle({
+        id: 5,
+        phase: 'firing',
+        arrivedAtMs: 45_000,
+        beamEndsAtMs: 46_735,
+        lane: secondLane,
+      }),
+    ]);
+
+    act(() => {
+      handleRef.current?.write(world);
+    });
+
+    expect(nodeAt(beamNodes(), 0).style.opacity).toBe('1');
+    expect(nodeAt(beamNodes(), 1).style.opacity).toBe('1');
+    expect(nodeAt(beamNodes(), 0).style.width).toBe(`${LANE.lengthPx}px`);
+
+    act(() => {
+      handleRef.current?.write(world, new Map([[4, 100]]));
+    });
+
+    expect(nodeAt(beamNodes(), 0).style.opacity).toBe('1');
+    expect(nodeAt(beamNodes(), 0).style.width).toBe('100px');
+    expect(nodeAt(beamNodes(), 1).style.opacity).toBe('1');
+    expect(nodeAt(beamNodes(), 1).style.transform).toBe(
+      `translate3d(${secondLane.originX}px, ${secondLane.originY}px, 0) rotate(${Math.atan2(
+        secondLane.dirY,
+        secondLane.dirX,
+      )}rad) translateY(-50%)`,
+    );
   });
 
   it('writes red and triangle bodies, warning lanes, and beam lanes', () => {
@@ -268,7 +312,7 @@ describe('EnemyLayer', () => {
       handleRef.current?.write(secondWorld);
     });
 
-    expect(bodyNodes()).toHaveLength(24);
+    expect(bodyNodes()).toHaveLength(36);
     expect(nodeAt(bodyNodes(), 0)).toBe(nodeAt(bodies, 0));
     expect(nodeAt(warningNodes(), 0)).toBe(nodeAt(warnings, 0));
     expect(nodeAt(beamNodes(), 0)).toBe(nodeAt(beams, 0));

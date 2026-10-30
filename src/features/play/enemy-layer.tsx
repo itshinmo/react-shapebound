@@ -1,14 +1,15 @@
 import { createRef, forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react';
 
 import type { BeamLane } from '@/game/enemy-collision';
-import { getBeamLanes, getWarningLanes } from '@/game/enemy-world';
+import { TRIANGLE_MAX_WARNINGS } from '@/game/enemy-orange-triangle';
+import { ENEMY_SLOT_COUNT, getBeamLanes, getWarningLanes } from '@/game/enemy-world';
 import type { EnemyKind, EnemySlot, EnemyWorld } from '@/game/enemy-world';
 
 import type { RefObject } from 'react';
 
-const BODY_SLOT_COUNT = 24;
-const WARNING_SLOT_COUNT = 2;
-const BEAM_SLOT_COUNT = 2;
+const BODY_SLOT_COUNT = ENEMY_SLOT_COUNT;
+const WARNING_SLOT_COUNT = TRIANGLE_MAX_WARNINGS;
+const BEAM_SLOT_COUNT = TRIANGLE_MAX_WARNINGS;
 
 const BODY_BASE_CLASS =
   'pointer-events-none absolute top-0 left-0 opacity-0 outline-1 -outline-offset-1 outline-ink/25 will-change-transform';
@@ -20,7 +21,7 @@ const BEAM_CLASS =
   'pointer-events-none absolute top-0 left-0 origin-top-left border border-ink/40 bg-orange text-orange opacity-0 glow-warning will-change-transform';
 
 export interface EnemyLayerHandle {
-  write(world: EnemyWorld): void;
+  write(world: EnemyWorld, beamLengthOverrides?: ReadonlyMap<number, number>): void;
   clear(): void;
 }
 
@@ -42,7 +43,7 @@ export const EnemyLayer = forwardRef<EnemyLayerHandle, EnemyLayerProps>(function
   );
 
   const write = useCallback(
-    (world: EnemyWorld) => {
+    (world: EnemyWorld, beamLengthOverrides?: ReadonlyMap<number, number>) => {
       const playedKinds = playedKindsRef.current;
 
       for (let index = 0; index < BODY_SLOT_COUNT; index += 1) {
@@ -55,7 +56,7 @@ export const EnemyLayer = forwardRef<EnemyLayerHandle, EnemyLayerProps>(function
       }
 
       writeLanes(nodes.warnings, getWarningLanes(world));
-      writeLanes(nodes.beams, getBeamLanes(world));
+      writeLanes(nodes.beams, getBeamLanes(world, beamLengthOverrides));
     },
     [nodes],
   );

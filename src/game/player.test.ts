@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PLAYER_BASE_STATS,
   PLAYER_CONTAINER_SIZE,
+  addBarrier,
   applyDamage,
   clampPlayerToBounds,
   createPlayer,
@@ -11,8 +12,8 @@ import {
 
 const BOUNDS = { left: 0, top: 0, width: 800, height: 600 };
 
-function createTestPlayer(maxHealth = 1) {
-  return createPlayer({ ...PLAYER_BASE_STATS, maxHealth }, BOUNDS);
+function createTestPlayer(maxBarrier = 0) {
+  return createPlayer({ ...PLAYER_BASE_STATS, maxBarrier }, BOUNDS);
 }
 
 describe('player configuration', () => {
@@ -22,7 +23,7 @@ describe('player configuration', () => {
 });
 
 describe('createPlayer', () => {
-  it('spawns centered with 1 health and no shield at base stats', () => {
+  it('spawns centered with 1 health and no barrier at base stats', () => {
     const player = createTestPlayer();
 
     expect(player.x).toBe(400);
@@ -30,15 +31,26 @@ describe('createPlayer', () => {
     expect(player.size).toBe(64);
     expect(player.speed).toBe(180);
     expect(player.health).toBe(1);
-    expect(player.shield).toBe(0);
+    expect(player.barrier).toBe(0);
+    expect(player.maxBarrier).toBe(0);
     expect(player.alive).toBe(true);
   });
 
-  it('converts health above 1 into shield', () => {
-    const player = createTestPlayer(3);
+  it.each([0, 1, 2, 3] as const)('starts at full barrier with maxBarrier %i', (maxBarrier) => {
+    const player = createTestPlayer(maxBarrier);
 
     expect(player.health).toBe(1);
-    expect(player.shield).toBe(2);
+    expect(player.maxBarrier).toBe(maxBarrier);
+    expect(player.barrier).toBe(maxBarrier);
+    expect(player.alive).toBe(true);
+  });
+
+  it('clamps maxBarrier defensively to an integer in 0..3', () => {
+    expect(createTestPlayer(9).maxBarrier).toBe(3);
+    expect(createTestPlayer(-2).maxBarrier).toBe(0);
+    expect(createTestPlayer(2.9).maxBarrier).toBe(2);
+    expect(createTestPlayer(Number.NaN).maxBarrier).toBe(0);
+    expect(createTestPlayer(Number.POSITIVE_INFINITY).maxBarrier).toBe(0);
   });
 
   it('centers a player that is larger than the bounds', () => {
@@ -111,6 +123,14 @@ describe('stepPlayer', () => {
 
     expect(next).toBe(dead);
   });
+
+  it('does not regenerate barrier by moving or waiting', () => {
+    const player = applyDamage(createTestPlayer(2), 1);
+    const next = stepPlayer(player, { x: 1, y: 1 }, 10, BOUNDS);
+
+    expect(next.barrier).toBe(1);
+    expect(next.maxBarrier).toBe(2);
+  });
 });
 
 describe('clampPlayerToBounds', () => {
@@ -146,25 +166,43 @@ describe('clampPlayerToBounds', () => {
 });
 
 describe('applyDamage', () => {
-  it('consumes shield before health', () => {
+  it('consumes barrier before health', () => {
     const player = createTestPlayer(3);
     const next = applyDamage(player, 1);
 
     expect(next.health).toBe(1);
-    expect(next.shield).toBe(1);
+    expect(next.barrier).toBe(2);
+    expect(next.maxBarrier).toBe(3);
     expect(next.alive).toBe(true);
   });
 
-  it('breaks the single health point when damage exceeds the shield', () => {
+  it('breaks the single health point when damage exceeds the barrier', () => {
     const player = createTestPlayer(3);
-    const next = applyDamage(player, 3);
+    const next = applyDamage(player, 4);
 
     expect(next.health).toBe(0);
-    expect(next.shield).toBe(0);
+    expect(next.barrier).toBe(0);
+    expect(next.maxBarrier).toBe(3);
     expect(next.alive).toBe(false);
   });
 
-  it('does not reduce health or shield for non-positive or non-finite damage', () => {
+  it('kills immediately at zero barrier', () => {
+    const next = applyDamage(createTestPlayer(0), 1);
+
+    expect(next.health).toBe(0);
+    expect(next.barrier).toBe(0);
+    expect(next.alive).toBe(false);
+  });
+
+  it('leaves no partial barrier on overkill', () => {
+    const next = applyDamage(createTestPlayer(1), 2);
+
+    expect(next.health).toBe(0);
+    expect(next.barrier).toBe(0);
+    expect(next.alive).toBe(false);
+  });
+
+  it('does not reduce health or barrier for non-positive or non-finite damage', () => {
     const player = createTestPlayer(3);
 
     expect(applyDamage(player, 0)).toBe(player);
@@ -178,5 +216,45 @@ describe('applyDamage', () => {
     const dead = applyDamage(createTestPlayer(), 1);
 
     expect(applyDamage(dead, 1)).toBe(dead);
+  });
+});
+
+describe('addBarrier', () => {
+  it('adds one charge below the cap', () => {
+    const player = applyDamage(createTestPlayer(2), 1);
+    const next = addBarrier(player, 1);
+
+    expect(player.barrier).toBe(1);
+    expect(next.barrier).toBe(2);
+    expect(next.maxBarrier).toBe(2);
+  });
+
+  it('clamps at maxBarrier', () => {
+    const player = createTestPlayer(2);
+
+    expect(addBarrier(player, 1)).toBe(player);
+    expect(addBarrier(applyDamage(player, 1), 5).barrier).toBe(2);
+  });
+
+  it('stays at zero when maxBarrier is zero', () => {
+    const player = createTestPlayer(0);
+
+    expect(addBarrier(player, 1).barrier).toBe(0);
+  });
+
+  it('does not add to a dead player', () => {
+    const dead = applyDamage(createTestPlayer(1), 2);
+
+    expect(addBarrier(dead, 1)).toBe(dead);
+  });
+
+  it('ignores non-positive, fractional, and non-finite amounts', () => {
+    const player = applyDamage(createTestPlayer(2), 1);
+
+    expect(addBarrier(player, 0)).toBe(player);
+    expect(addBarrier(player, -1)).toBe(player);
+    expect(addBarrier(player, 0.9)).toBe(player);
+    expect(addBarrier(player, Number.NaN)).toBe(player);
+    expect(addBarrier(player, Number.POSITIVE_INFINITY)).toBe(player);
   });
 });

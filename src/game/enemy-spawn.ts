@@ -27,8 +27,8 @@ export const EDGE_BAND_MAX = 0.9;
 export const ENEMY_STEP_MS = 20;
 export const ENEMY_STEP_SECONDS = ENEMY_STEP_MS / 1_000;
 export const ENEMY_SAFETY_LIFETIME_MS = 30_000;
-export const RED_TARGET_MAX = 12;
-export const TRIANGLE_TARGET_MAX = 5;
+export const RED_TARGET_MAX = 24;
+export const TRIANGLE_TARGET_MAX = 12;
 
 export function isViewportSpawnable(viewport: ViewportRect): boolean {
   return (
@@ -147,7 +147,7 @@ export function redTargetAtMs(tMs: number): number {
 }
 
 export function triangleTargetAtMs(tMs: number): number {
-  return tMs < 45_000 ? 0 : Math.min(TRIANGLE_TARGET_MAX, 1 + Math.floor((tMs - 45_000) / 90_000));
+  return Math.min(TRIANGLE_TARGET_MAX, redTargetAtMs(tMs));
 }
 
 export function getSpawnMark(side: SpawnSide, alongPx: number, atMs: number): SpawnMark {
