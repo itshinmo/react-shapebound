@@ -231,12 +231,65 @@ export function TitleScreen() {
                 LOCAL PROGRESSION
               </h2>
               <p className="mt-2 font-body text-sm leading-snug text-muted">
-                A v2 local save with blue points, best time, run count, and captured upgrades, plus
-                the interactive add-only skill tree and Reset Skills.
+                A v2 local save with blue points, best time, run count, and captured upgrade levels.
               </p>
               <div className="mt-auto pt-4">
                 <span className="inline-block border border-acid px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-acid uppercase">
                   SLICE 05
+                </span>
+              </div>
+            </article>
+
+            <article className="flex h-full flex-col border border-cyan/50 bg-panel p-4">
+              <p className="font-mono text-[0.58rem] tracking-[0.2em] text-cyan uppercase">
+                MODULE_07 // SKILLS
+              </p>
+              <h2 className="mt-2 font-display text-2xl font-bold tracking-[0.02em] uppercase">
+                SKILL TREE
+              </h2>
+              <p className="mt-2 font-body text-sm leading-snug text-muted">
+                Seven add-only nodes bought with blue points, plus a confirmed Reset Skills refund
+                that feeds the next run's captured loadout.
+              </p>
+              <div className="mt-auto pt-4">
+                <span className="inline-block border border-cyan px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-cyan uppercase">
+                  SLICE 06
+                </span>
+              </div>
+            </article>
+
+            <article className="flex h-full flex-col border border-acid/50 bg-panel p-4">
+              <p className="font-mono text-[0.58rem] tracking-[0.2em] text-acid uppercase">
+                MODULE_08 // DEFENSE
+              </p>
+              <h2 className="mt-2 font-display text-2xl font-bold tracking-[0.02em] uppercase">
+                REFLECT SHIELD
+              </h2>
+              <p className="mt-2 font-body text-sm leading-snug text-muted">
+                Right mouse or a second finger orbits a 64 px shield. Charges, the ring, and barrier
+                notches make each parry a visible resource.
+              </p>
+              <div className="mt-auto pt-4">
+                <span className="inline-block border border-acid px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-acid uppercase">
+                  SLICE 07
+                </span>
+              </div>
+            </article>
+
+            <article className="flex h-full flex-col border border-cyan/50 bg-panel p-4">
+              <p className="font-mono text-[0.58rem] tracking-[0.2em] text-cyan uppercase">
+                MODULE_09 // COMBAT
+              </p>
+              <h2 className="mt-2 font-display text-2xl font-bold tracking-[0.02em] uppercase">
+                INSTANT REFLECT
+              </h2>
+              <p className="mt-2 font-body text-sm leading-snug text-muted">
+                Reflected beams fire instantly along the shield, preview their path, pierce normal
+                enemies, and end in shape-matched explosions.
+              </p>
+              <div className="mt-auto pt-4">
+                <span className="inline-block border border-cyan px-2 py-1 font-mono text-[0.55rem] tracking-[0.16em] text-cyan uppercase">
+                  SLICE 08
                 </span>
               </div>
             </article>
