@@ -18,6 +18,9 @@ export function StartOverlay({ onStart, pending }: StartOverlayProps) {
         <p className="mt-4 font-body text-lg leading-snug text-muted">
           Landscape is required. Fullscreen and orientation lock are requested where supported.
         </p>
+        <p className="mt-3 font-mono text-[0.62rem] leading-relaxed tracking-[0.18em] text-cyan uppercase">
+          ONE FINGER MOVES // A SECOND FINGER AIMS THE SHIELD WHEN CHARGES ARE AVAILABLE.
+        </p>
         <Button
           variant="primary"
           size="lg"

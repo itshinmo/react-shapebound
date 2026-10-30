@@ -2,12 +2,17 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getEnemyHitHalf,
+  getLaneEntryDistanceToAabb,
+  getLaneSegmentContact,
+  getReflectionDirection,
   laneOverlapsHurtbox,
   pickEarliestContact,
+  resolveLaneReflection,
   sweptRedContact,
   type BeamLane,
   type Hurtbox,
 } from './enemy-collision';
+import { getShieldSegment } from './reflect-shield';
 
 const HURTBOX: Hurtbox = { x: 100, y: 100, halfWidth: 25.6, halfHeight: 25.6 };
 
@@ -113,6 +118,127 @@ describe('laneOverlapsHurtbox', () => {
   });
 });
 
+describe('reflect shield contact and first hit', () => {
+  const LANE: BeamLane = {
+    originX: 400,
+    originY: 380,
+    dirX: 0,
+    dirY: -1,
+    widthPx: 57.6,
+    lengthPx: 444,
+  };
+  const SHIELD = getShieldSegment({ x: 400, y: 300 }, 64, { x: 0, y: 1 });
+  const PLAYER = { x: 400, y: 300, halfWidth: 25.6, halfHeight: 25.6 };
+
+  it('finds the centerline contact point on the shield', () => {
+    const contact = getLaneSegmentContact(LANE, SHIELD.ax, SHIELD.ay, SHIELD.bx, SHIELD.by);
+
+    expect(contact).not.toBeNull();
+    expect(contact?.x).toBeCloseTo(400);
+    expect(contact?.y).toBeCloseTo(346);
+    expect(contact?.distancePx).toBeCloseTo(34);
+  });
+
+  it('finds the player lane entry distance', () => {
+    expect(getLaneEntryDistanceToAabb(LANE, PLAYER)).toBeCloseTo(54.4);
+  });
+
+  it('reflects when the outer shield face is hit before the player', () => {
+    expect(resolveLaneReflection(LANE, SHIELD, PLAYER)).toMatchObject({
+      originX: 400,
+      originY: 346,
+      contactX: 400,
+      contactY: 346,
+      distancePx: 34,
+      dirX: 0,
+      dirY: 1,
+    });
+  });
+
+  it('does not reflect from the inner side', () => {
+    const inner = getShieldSegment({ x: 400, y: 300 }, 64, { x: 0, y: -1 });
+
+    expect(resolveLaneReflection(LANE, inner, PLAYER)).toBeNull();
+  });
+
+  it('does not reflect when the player is hit first', () => {
+    const lane: BeamLane = {
+      originX: 100,
+      originY: 300,
+      dirX: 1,
+      dirY: 0,
+      widthPx: 12,
+      lengthPx: 800,
+    };
+    const shieldBehindPlayer = {
+      ax: 450,
+      ay: 280,
+      bx: 450,
+      by: 320,
+      midpointX: 450,
+      midpointY: 300,
+      normalX: -1,
+      normalY: 0,
+    };
+
+    expect(resolveLaneReflection(lane, shieldBehindPlayer, PLAYER)).toBeNull();
+  });
+
+  it('reflects when an angled shield enters the lane before its centerline', () => {
+    const lane: BeamLane = {
+      originX: -200,
+      originY: -45,
+      dirX: 1,
+      dirY: 0,
+      widthPx: 57.6,
+      lengthPx: 1_000,
+    };
+    const shield = {
+      ax: 413.612,
+      ay: -61,
+      bx: 358.188,
+      by: -29,
+      midpointX: 385.9,
+      midpointY: -45,
+      normalX: -0.5,
+      normalY: -0.866,
+    };
+    const contact = getLaneSegmentContact(lane, shield.ax, shield.ay, shield.bx, shield.by);
+    const playerNearEdge = { x: 400, y: 0, halfWidth: 25.6, halfHeight: 25.6 };
+
+    expect(contact?.x).toBeCloseTo(358.2, 0);
+    expect(contact?.distancePx).toBeCloseTo(558.2, 0);
+    expect(resolveLaneReflection(lane, shield, playerNearEdge)).toMatchObject({
+      originX: 385.9,
+      originY: -45,
+    });
+    expect(resolveLaneReflection(lane, shield, playerNearEdge)?.contactX).toBeCloseTo(358.2, 0);
+  });
+
+  it('reflects a tie at the player contact distance', () => {
+    const lane: BeamLane = {
+      originX: 100,
+      originY: 300,
+      dirX: 1,
+      dirY: 0,
+      widthPx: 12,
+      lengthPx: 800,
+    };
+    const shieldAtPlayerEntry = {
+      ax: 374.4,
+      ay: 280,
+      bx: 374.4,
+      by: 320,
+      midpointX: 374.4,
+      midpointY: 300,
+      normalX: -1,
+      normalY: 0,
+    };
+
+    expect(resolveLaneReflection(lane, shieldAtPlayerEntry, PLAYER)).not.toBeNull();
+  });
+});
+
 describe('pickEarliestContact', () => {
   it('returns null for no candidates', () => {
     expect(pickEarliestContact([])).toBeNull();
@@ -136,5 +262,49 @@ describe('pickEarliestContact', () => {
     const candidate = { slotId: 2, contactTime: 0.4, kind: 'red-square' };
 
     expect(pickEarliestContact([candidate])).toBe(candidate);
+  });
+});
+
+describe('getReflectionDirection', () => {
+  it('reflects a perpendicular beam back along the normal', () => {
+    expect(
+      getReflectionDirection(lane({ originX: 0, originY: 0, dirX: 0, dirY: -1 }), 0, -1),
+    ).toEqual({ x: 0, y: 1 });
+  });
+
+  it('normalizes a non-unit lane and normal', () => {
+    const direction = getReflectionDirection(
+      lane({ originX: 0, originY: 0, dirX: 0, dirY: -5 }),
+      0,
+      -3,
+    );
+
+    expect(direction?.x).toBeCloseTo(0);
+    expect(direction?.y).toBeCloseTo(1);
+  });
+
+  it('rejects a grazing beam at or below the epsilon', () => {
+    expect(
+      getReflectionDirection(lane({ originX: 0, originY: 0, dirX: 1, dirY: 0 }), 0, 1),
+    ).toBeNull();
+
+    const justBelow = Math.sqrt(1 - 0.34 * 0.34);
+    expect(
+      getReflectionDirection(lane({ originX: 0, originY: 0, dirX: justBelow, dirY: 0.34 }), 0, 1),
+    ).toBeNull();
+
+    const atEpsilon = Math.sqrt(1 - 0.35 * 0.35);
+    expect(
+      getReflectionDirection(lane({ originX: 0, originY: 0, dirX: atEpsilon, dirY: 0.35 }), 0, 1),
+    ).not.toBeNull();
+  });
+
+  it('rejects a zero direction or zero normal', () => {
+    expect(
+      getReflectionDirection(lane({ originX: 0, originY: 0, dirX: 0, dirY: 0 }), 0, 1),
+    ).toBeNull();
+    expect(
+      getReflectionDirection(lane({ originX: 0, originY: 0, dirX: 0, dirY: 1 }), 0, 0),
+    ).toBeNull();
   });
 });

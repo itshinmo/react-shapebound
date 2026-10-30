@@ -1,7 +1,7 @@
 export interface PlayerStats {
   readonly speed: number;
   readonly size: number;
-  readonly maxHealth: number;
+  readonly maxBarrier: number;
 }
 
 export interface PlayerState {
@@ -10,7 +10,8 @@ export interface PlayerState {
   readonly speed: number;
   readonly size: number;
   readonly health: 0 | 1;
-  readonly shield: number;
+  readonly barrier: number;
+  readonly maxBarrier: number;
   readonly alive: boolean;
 }
 
@@ -29,13 +30,15 @@ export interface Bounds {
 export const PLAYER_BASE_STATS: PlayerStats = {
   speed: 180,
   size: 64,
-  maxHealth: 1,
+  maxBarrier: 0,
 };
 
 export const PLAYER_CONTAINER_SIZE = 320;
 
 export function createPlayer(stats: PlayerStats, bounds: Bounds): PlayerState {
-  const shield = Math.max(0, Math.floor(stats.maxHealth) - 1);
+  const maxBarrier = Number.isFinite(stats.maxBarrier)
+    ? Math.min(3, Math.max(0, Math.floor(stats.maxBarrier)))
+    : 0;
 
   return {
     x: bounds.left + bounds.width / 2,
@@ -43,7 +46,8 @@ export function createPlayer(stats: PlayerStats, bounds: Bounds): PlayerState {
     speed: stats.speed,
     size: stats.size,
     health: 1,
-    shield,
+    barrier: maxBarrier,
+    maxBarrier,
     alive: true,
   };
 }
@@ -98,15 +102,32 @@ export function applyDamage(player: PlayerState, amount: number): PlayerState {
     return player;
   }
 
-  const absorbed = Math.min(player.shield, damage);
+  const absorbed = Math.min(player.barrier, damage);
   const remaining = damage - absorbed;
   const health: 0 | 1 = remaining > 0 ? 0 : 1;
 
   return {
     ...player,
     health,
-    shield: health === 1 ? player.shield - absorbed : 0,
+    barrier: health === 1 ? player.barrier - absorbed : 0,
     alive: health === 1,
+  };
+}
+
+export function addBarrier(player: PlayerState, amount: number): PlayerState {
+  if (!player.alive || !Number.isFinite(amount) || amount <= 0) {
+    return player;
+  }
+
+  const granted = Math.min(player.maxBarrier - player.barrier, Math.floor(amount));
+
+  if (granted <= 0) {
+    return player;
+  }
+
+  return {
+    ...player,
+    barrier: player.barrier + granted,
   };
 }
 

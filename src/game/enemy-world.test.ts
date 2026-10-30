@@ -13,10 +13,12 @@ import {
   getFreeSlotCount,
   getWarningLanes,
   stepEnemies,
+  type EnemyShieldDescriptor,
   type EnemySlot,
   type EnemyStepResult,
   type EnemyWorld,
 } from './enemy-world';
+import { getShieldSegment } from './reflect-shield';
 import { createRng } from './rng';
 
 import type { TriangleSlot } from './enemy-orange-triangle';
@@ -40,6 +42,7 @@ function step(
       readonly halfHeight: number;
     };
     readonly playerAlive?: boolean;
+    readonly shield?: EnemyShieldDescriptor | null;
   } = {},
 ): EnemyStepResult {
   return stepEnemies(world, {
@@ -47,6 +50,7 @@ function step(
     viewport: options.viewport ?? VIEWPORT,
     playerHurtbox: options.hurtbox ?? HURTBOX,
     playerAlive: options.playerAlive ?? true,
+    shield: options.shield ?? null,
   });
 }
 
@@ -94,6 +98,7 @@ function makeTriangle(
     lane: null,
     sizePx: 40,
     enteredViewport: true,
+    damagedPlayer: false,
     ...overrides,
   };
 }
@@ -191,13 +196,13 @@ function findRngStateForSideAndUnit(side: number, minUnit: number, maxUnit: numb
 }
 
 describe('createEnemyWorld', () => {
-  it('creates exactly 24 free slots with the initial timers and cursors', () => {
+  it('creates exactly 36 free slots with the initial timers and cursors', () => {
     const world = createEnemyWorld(123);
 
-    expect(world.slots).toHaveLength(24);
+    expect(world.slots).toHaveLength(36);
     expect(world.slots.every((slot) => slot === null)).toBe(true);
     expect(world.nextRedSpawnAtMs).toBe(2_000);
-    expect(world.nextTriangleSpawnAtMs).toBe(45_000);
+    expect(world.nextTriangleSpawnAtMs).toBe(2_000);
     expect(world.redRngState).toBe((123 + 0x9e3779b9) >>> 0);
     expect(world.triangleRngState).toBe((123 + 0xc2b2ae35) >>> 0);
     expect(world.lastSpawn).toEqual({ red: null, triangle: null });
@@ -208,7 +213,7 @@ describe('createEnemyWorld', () => {
     const world = createEnemyWorld(123);
 
     expect(getActiveCounts(world)).toEqual({ total: 0, red: 0, triangle: 0 });
-    expect(getFreeSlotCount(world)).toBe(24);
+    expect(getFreeSlotCount(world)).toBe(36);
     expect(getChargingCount(world)).toBe(0);
     expect(getWarningLanes(world)).toEqual([]);
     expect(getBeamLanes(world)).toEqual([]);
@@ -227,7 +232,7 @@ describe('spawn unlock and cadence', () => {
 
     expect(getActiveCounts(spawned.world).red).toBe(1);
     expect(spawned.world.nextRedSpawnAtMs).toBe(2_900);
-    expect(getFreeSlotCount(spawned.world)).toBe(23);
+    expect(getFreeSlotCount(spawned.world)).toBe(34);
 
     const cursor = spawned.world.redRngState;
     const skipped = step(spawned.world, 2_900);
@@ -237,30 +242,30 @@ describe('spawn unlock and cadence', () => {
     expect(skipped.world.redRngState).toBe(cursor);
   });
 
-  it('attempts the first triangle at 45 000 ms and then on its cadence', () => {
+  it('attempts the first triangle at 2 000 ms and then on the shared cadence', () => {
     const world = createEnemyWorld(7);
-    const before = step(world, 44_999, {
+    const before = step(world, 1_999, {
       viewport: WIDE_VIEWPORT,
       hurtbox: WIDE_HURTBOX,
     });
 
     expect(getActiveCounts(before.world).triangle).toBe(0);
 
-    const unlocked = step(before.world, 45_000, {
+    const unlocked = step(before.world, 2_000, {
       viewport: WIDE_VIEWPORT,
       hurtbox: WIDE_HURTBOX,
     });
 
     expect(getActiveCounts(unlocked.world).triangle).toBe(1);
-    expect(unlocked.world.nextTriangleSpawnAtMs).toBe(46_600);
+    expect(unlocked.world.nextTriangleSpawnAtMs).toBe(2_900);
 
     const triangleCursor = unlocked.world.triangleRngState;
-    const cadence = step(unlocked.world, 46_600, {
+    const cadence = step(unlocked.world, 2_900, {
       viewport: WIDE_VIEWPORT,
       hurtbox: WIDE_HURTBOX,
     });
 
-    expect(cadence.world.nextTriangleSpawnAtMs).toBe(48_200);
+    expect(cadence.world.nextTriangleSpawnAtMs).toBe(3_800);
     expect(cadence.world.triangleRngState).toBe(triangleCursor);
   });
 });
@@ -306,18 +311,18 @@ describe('target and pool caps', () => {
     const result = step(world, 405_000);
 
     expect(getActiveCounts(result.world).triangle).toBe(MAX_TRIANGLES);
-    expect(result.world.nextTriangleSpawnAtMs).toBe(406_600);
+    expect(result.world.nextTriangleSpawnAtMs).toBe(405_900);
     expect(result.world.triangleRngState).toBe(777);
   });
 
-  it('skips when the shared pool is full even if the kind target is not reached', () => {
+  it('skips when the shared 36-slot pool is full', () => {
     const entries: (readonly [number, EnemySlot])[] = [];
 
-    for (let id = 0; id < 11; id += 1) {
+    for (let id = 0; id < MAX_RED_SQUARES; id += 1) {
       entries.push([id, makeRed(id, { spawnedAtMs: 485_000 })]);
     }
 
-    for (let id = 11; id < 24; id += 1) {
+    for (let id = MAX_RED_SQUARES; id < MAX_RED_SQUARES + MAX_TRIANGLES; id += 1) {
       entries.push([
         id,
         makeTriangle(id, {
@@ -336,8 +341,9 @@ describe('target and pool caps', () => {
     const result = step(world, 485_000);
 
     expect(getFreeSlotCount(result.world)).toBe(0);
-    expect(getActiveCounts(result.world).total).toBe(24);
-    expect(getActiveCounts(result.world).red).toBe(11);
+    expect(getActiveCounts(result.world).total).toBe(36);
+    expect(getActiveCounts(result.world).red).toBe(MAX_RED_SQUARES);
+    expect(getActiveCounts(result.world).triangle).toBe(MAX_TRIANGLES);
     expect(result.world.redRngState).toBe(888);
     expect(result.world.nextRedSpawnAtMs).toBe(485_900);
   });
@@ -393,7 +399,8 @@ describe('RNG streams', () => {
     const base = createEnemyWorld(99);
     const triangleSeed = base.triangleRngState;
     const redSeed = base.redRngState;
-    const afterRed = step(base, 2_000, {
+    const redOnly = { ...base, nextTriangleSpawnAtMs: 100_000 };
+    const afterRed = step(redOnly, 2_000, {
       viewport: WIDE_VIEWPORT,
       hurtbox: WIDE_HURTBOX,
     });
@@ -401,8 +408,12 @@ describe('RNG streams', () => {
     expect(afterRed.world.redRngState).not.toBe(redSeed);
     expect(afterRed.world.triangleRngState).toBe(triangleSeed);
 
-    const withoutRedAttempt = { ...afterRed.world, nextRedSpawnAtMs: 100_000 };
-    const afterTriangle = step(withoutRedAttempt, 45_000, {
+    const triangleOnly = {
+      ...afterRed.world,
+      nextRedSpawnAtMs: 100_000,
+      nextTriangleSpawnAtMs: 2_000,
+    };
+    const afterTriangle = step(triangleOnly, 2_000, {
       viewport: WIDE_VIEWPORT,
       hurtbox: WIDE_HURTBOX,
     });
@@ -558,7 +569,7 @@ describe('damage resolution', () => {
     expect(requireTriangle(result.world, 1).beamEndsAtMs).toBe(1_180);
   });
 
-  it('never damages from triangle body contact', () => {
+  it('damages from triangle body contact and marks that triangle', () => {
     const triangle = makeTriangle(2, {
       phase: 'approach',
       x: 400,
@@ -573,8 +584,27 @@ describe('damage resolution', () => {
     const world = worldWith([[2, triangle]]);
     const result = step(world, 1_000);
 
-    expect(result.hit).toBeNull();
+    expect(result.hit).toEqual({ slotId: 2, kind: 'orange-triangle', atMs: 1_000 });
     expect(requireTriangle(result.world, 2).x).toBeCloseTo(402);
+    expect(requireTriangle(result.world, 2).damagedPlayer).toBe(true);
+  });
+
+  it('does not damage twice from the same triangle body', () => {
+    const triangle = makeTriangle(2, {
+      phase: 'aimed',
+      x: 400,
+      y: 300,
+      stopX: 400,
+      stopY: 300,
+      arrivedAtMs: 500,
+      spawnedAtMs: 1_000,
+    });
+    const first = step(worldWith([[2, triangle]]), 1_000);
+    const second = step(first.world, 1_600);
+
+    expect(first.hit?.slotId).toBe(2);
+    expect(requireTriangle(first.world, 2).damagedPlayer).toBe(true);
+    expect(second.hit).toBeNull();
   });
 });
 
@@ -596,7 +626,7 @@ describe('warning lanes', () => {
     expect(getChargingCount(world)).toBe(2);
   });
 
-  it('promotes at most two charging triangles in arrival order', () => {
+  it('promotes at most six charging triangles in arrival order', () => {
     const lane = beamLane();
     const firing = makeTriangle(0, {
       phase: 'charging',
@@ -604,76 +634,150 @@ describe('warning lanes', () => {
       chargeEndsAtMs: 1_000,
       lane,
     });
-    const firstWaiter = makeTriangle(1, { phase: 'aimed', arrivedAtMs: 600, lane });
-    const secondWaiter = makeTriangle(2, { phase: 'aimed', arrivedAtMs: 700, lane });
-    const thirdWaiter = makeTriangle(3, { phase: 'aimed', arrivedAtMs: 800, lane });
+    const waiters = Array.from({ length: MAX_CHARGING_TRIANGLES }, (_, index) =>
+      makeTriangle(index + 1, { phase: 'aimed', arrivedAtMs: 600 + index * 50, lane }),
+    );
     const world = worldWith([
       [0, firing],
-      [1, firstWaiter],
-      [2, secondWaiter],
-      [3, thirdWaiter],
+      ...waiters.map((waiter) => [waiter.id, waiter] as const),
     ]);
     const firstStep = step(world, 1_000);
     const secondStep = step(firstStep.world, 1_020);
 
     expect(requireTriangle(firstStep.world, 0).phase).toBe('firing');
     expect(requireTriangle(firstStep.world, 1).phase).toBe('charging');
-    expect(requireTriangle(firstStep.world, 2).phase).toBe('aimed');
-    expect(requireTriangle(firstStep.world, 3).phase).toBe('aimed');
-    expect(getChargingCount(firstStep.world)).toBe(1);
-    expect(requireTriangle(secondStep.world, 2).phase).toBe('charging');
-    expect(requireTriangle(secondStep.world, 3).phase).toBe('aimed');
+    expect(requireTriangle(firstStep.world, MAX_CHARGING_TRIANGLES).phase).toBe('aimed');
+    expect(getChargingCount(firstStep.world)).toBe(MAX_CHARGING_TRIANGLES - 1);
+    expect(requireTriangle(secondStep.world, MAX_CHARGING_TRIANGLES).phase).toBe('charging');
     expect(getChargingCount(secondStep.world)).toBe(MAX_CHARGING_TRIANGLES);
   });
+});
 
-  it('does not let a new arrival take a warning slot freed by a same-step fire', () => {
-    const lane = beamLane(100, 100);
-    const firstCharging = makeTriangle(0, {
+describe('reflect shield interceptions', () => {
+  const SHIELD = getShieldSegment({ x: 400, y: 300 }, 64, { x: 0, y: 1 });
+  const VERTICAL_LANE = createBeamLane(400, 400, 0, -1, VIEWPORT);
+  const GRAZING_LANE = createBeamLane(0, 350, 1, 0, VIEWPORT);
+
+  function firingTriangle(lane: ReturnType<typeof createBeamLane>, id = 1): TriangleSlot {
+    return makeTriangle(id, {
       phase: 'charging',
-      x: 100,
-      y: 100,
-      stopX: 100,
-      stopY: 100,
+      x: 400,
+      y: 400,
+      stopX: 400,
+      stopY: 400,
       arrivedAtMs: 500,
       chargeEndsAtMs: 1_000,
       lane,
       spawnedAtMs: 500,
     });
-    const secondCharging = makeTriangle(1, {
-      phase: 'charging',
-      x: 120,
-      y: 100,
-      stopX: 120,
-      stopY: 100,
-      arrivedAtMs: 550,
-      chargeEndsAtMs: 1_000,
-      lane,
-      spawnedAtMs: 500,
+  }
+
+  it('returns every beam and excludes a reflected beam from the player hit', () => {
+    const world = worldWith([[1, firingTriangle(VERTICAL_LANE)]]);
+    const result = step(world, 1_000, {
+      shield: { segment: SHIELD, chargesAvailable: 1 },
     });
-    const arriving = makeTriangle(2, {
-      phase: 'approach',
-      x: 299,
-      y: 100,
-      stopX: 300,
-      stopY: 100,
-      aimX: 1,
-      aimY: 0,
-      approachSpeedPxPerSec: 100,
-      spawnedAtMs: 500,
+
+    expect(result.fires).toEqual([{ slotId: 1, lane: VERTICAL_LANE, atMs: 1_000 }]);
+    expect(result.reflectedFireSlotIds).toEqual([1]);
+    expect(result.reflections[0]).toMatchObject({
+      slotId: 1,
+      originX: 400,
+      originY: 346,
+      contactX: 400,
+      contactY: 346,
+      dirX: 0,
+      dirY: 1,
     });
+    expect(result.hit).toBeNull();
+    expect(requireTriangle(result.world, 1).phase).toBe('firing');
+  });
+
+  it('leaves the beam as a player hit when no shield is active', () => {
+    const world = worldWith([[1, firingTriangle(VERTICAL_LANE)]]);
+    const result = step(world, 1_000, { shield: null });
+
+    expect(result.fires).toHaveLength(1);
+    expect(result.reflectedFireSlotIds).toEqual([]);
+    expect(result.hit).toEqual({ slotId: 1, kind: 'orange-triangle', atMs: 1_000 });
+  });
+
+  it('does not reflect with zero charges', () => {
+    const world = worldWith([[1, firingTriangle(VERTICAL_LANE)]]);
+    const result = step(world, 1_000, {
+      shield: { segment: SHIELD, chargesAvailable: 0 },
+    });
+
+    expect(result.reflectedFireSlotIds).toEqual([]);
+    expect(result.hit).toEqual({ slotId: 1, kind: 'orange-triangle', atMs: 1_000 });
+  });
+
+  it('does not reflect a grazing beam and leaves it as a damage beam', () => {
+    const world = worldWith([[1, firingTriangle(GRAZING_LANE)]]);
+    const result = step(world, 1_000, {
+      shield: { segment: SHIELD, chargesAvailable: 1 },
+    });
+
+    expect(result.reflectedFireSlotIds).toEqual([]);
+    expect(result.hit).toEqual({ slotId: 1, kind: 'orange-triangle', atMs: 1_000 });
+  });
+
+  it('reflects in slot-id order up to the available charges', () => {
     const world = worldWith([
-      [0, firstCharging],
-      [1, secondCharging],
-      [2, arriving],
+      [0, firingTriangle(VERTICAL_LANE, 0)],
+      [1, firingTriangle(VERTICAL_LANE, 1)],
+    ]);
+    const oneCharge = step(world, 1_000, {
+      shield: { segment: SHIELD, chargesAvailable: 1 },
+    });
+
+    expect(oneCharge.reflectedFireSlotIds).toEqual([0]);
+    expect(oneCharge.hit).toEqual({ slotId: 1, kind: 'orange-triangle', atMs: 1_000 });
+
+    const twoCharges = step(world, 1_000, {
+      shield: { segment: SHIELD, chargesAvailable: 2 },
+    });
+
+    expect(twoCharges.reflectedFireSlotIds).toEqual([0, 1]);
+    expect(twoCharges.hit).toBeNull();
+  });
+
+  it('reflects even while the player is invulnerable', () => {
+    const world = worldWith([[1, firingTriangle(VERTICAL_LANE)]], {
+      playerInvulnerableUntilMs: 2_000,
+    });
+    const result = step(world, 1_000, {
+      shield: { segment: SHIELD, chargesAvailable: 1 },
+    });
+
+    expect(result.reflectedFireSlotIds).toEqual([1]);
+    expect(result.hit).toBeNull();
+  });
+
+  it('truncates a reflected beam lane while keeping the other beam lane', () => {
+    const firing = (lane: ReturnType<typeof createBeamLane>, id: number): TriangleSlot =>
+      makeTriangle(id, {
+        phase: 'firing',
+        x: 400,
+        y: 400,
+        stopX: 400,
+        stopY: 400,
+        lane,
+        beamEndsAtMs: 9_000,
+      });
+    const world = worldWith([
+      [0, firing(VERTICAL_LANE, 0)],
+      [1, firing(GRAZING_LANE, 1)],
     ]);
 
-    const firstStep = step(world, 1_000);
-    const secondStep = step(firstStep.world, 1_020);
-
-    expect(requireTriangle(firstStep.world, 2).phase).toBe('aimed');
-    expect(requireTriangle(firstStep.world, 2).arrivedAtMs).toBe(1_000);
-    expect(getChargingCount(firstStep.world)).toBe(0);
-    expect(requireTriangle(secondStep.world, 2).phase).toBe('charging');
+    expect(getBeamLanes(world, new Map([[0, 100]]))).toEqual([
+      { ...VERTICAL_LANE, lengthPx: 100 },
+      GRAZING_LANE,
+    ]);
+    expect(getBeamLanes(world, new Map([[0, 0]]))).toEqual([
+      { ...VERTICAL_LANE, lengthPx: 0 },
+      GRAZING_LANE,
+    ]);
   });
 });
 
@@ -713,7 +817,7 @@ describe('freeze and death no-op', () => {
     expect(retry).not.toBe(world);
     expect(retry.slots.every((slot) => slot === null)).toBe(true);
     expect(retry.nextRedSpawnAtMs).toBe(2_000);
-    expect(retry.nextTriangleSpawnAtMs).toBe(45_000);
+    expect(retry.nextTriangleSpawnAtMs).toBe(2_000);
   });
 });
 
@@ -795,7 +899,7 @@ describe('resize handling', () => {
     });
 
     expect(getActiveCounts(result.world).triangle).toBe(0);
-    expect(result.world.nextTriangleSpawnAtMs).toBe(46_600);
+    expect(result.world.nextTriangleSpawnAtMs).toBe(45_900);
     expect(result.world.triangleRngState).not.toBe(state);
     expect(result.world.lastSpawn.triangle).toBeNull();
   });
@@ -813,7 +917,7 @@ describe('resize handling', () => {
 });
 
 describe('pool bounds', () => {
-  it('holds the 24-slot, per-kind, warning, and beam bounds across a long run', () => {
+  it('holds the 36-slot, per-kind, warning, and beam bounds across a long run', () => {
     let world = createEnemyWorld(123);
 
     for (let stepEndMs = 20; stepEndMs <= 500_000; stepEndMs += 20) {
@@ -822,14 +926,14 @@ describe('pool bounds', () => {
 
     const counts = getActiveCounts(world);
 
-    expect(world.slots).toHaveLength(24);
-    expect(counts.total).toBeLessThanOrEqual(24);
+    expect(world.slots).toHaveLength(36);
+    expect(counts.total).toBeLessThanOrEqual(36);
     expect(counts.red).toBeLessThanOrEqual(MAX_RED_SQUARES);
     expect(counts.triangle).toBeLessThanOrEqual(MAX_TRIANGLES);
     expect(getChargingCount(world)).toBeLessThanOrEqual(MAX_CHARGING_TRIANGLES);
-    expect(getWarningLanes(world).length).toBeLessThanOrEqual(2);
-    expect(getBeamLanes(world).length).toBeLessThanOrEqual(2);
-    expect(getFreeSlotCount(world) + counts.total).toBe(24);
+    expect(getWarningLanes(world).length).toBeLessThanOrEqual(6);
+    expect(getBeamLanes(world).length).toBeLessThanOrEqual(6);
+    expect(getFreeSlotCount(world) + counts.total).toBe(36);
   });
 });
 

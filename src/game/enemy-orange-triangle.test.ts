@@ -125,6 +125,7 @@ function makeTriangle(
     lane: null,
     sizePx: TRIANGLE_SIZE_PX,
     enteredViewport: false,
+    damagedPlayer: false,
     ...overrides,
   };
 }
@@ -193,7 +194,7 @@ describe('spawnTriangle', () => {
 
     expect(spawn.mark).toEqual({ side: 'top', alongPx: 400, atMs: 45_000 });
     expect(spawn.slot.x).toBe(400);
-    expect(spawn.slot.y).toBe(-84);
+    expect(spawn.slot.y).toBeCloseTo(-(64 + TRIANGLE_SIZE_PX / Math.SQRT2));
     expect(spawn.slot.sizePx).toBe(TRIANGLE_SIZE_PX);
     expect(spawn.slot.phase).toBe('approach');
     expect(spawn.slot.stopX).toBe(400);
@@ -217,7 +218,7 @@ describe('spawnTriangle', () => {
 
     expect(spawn.mark.side).toBe('right');
     expect(spawn.mark.alongPx).toBe(60);
-    expect(spawn.slot.x).toBe(884);
+    expect(spawn.slot.x).toBeCloseTo(800 + 64 + TRIANGLE_SIZE_PX / Math.SQRT2);
     expect(spawn.slot.y).toBe(60);
     expect(spawn.slot.stopX).toBe(647);
     expect(spawn.slot.stopY).toBe(60);
@@ -631,29 +632,29 @@ describe('triangle scheduling integration', () => {
     const world = createEnemyWorld(7);
 
     const beforeUnlock = stepEnemies(world, {
-      stepEndMs: 44_999,
+      stepEndMs: 1_999,
       viewport,
       playerHurtbox: hurtbox,
       playerAlive: true,
     });
     const unlocked = stepEnemies(beforeUnlock.world, {
-      stepEndMs: 45_000,
+      stepEndMs: 2_000,
       viewport,
       playerHurtbox: hurtbox,
       playerAlive: true,
     });
 
     expect(unlocked.world.slots.filter((slot) => slot?.kind === 'orange-triangle')).toHaveLength(1);
-    expect(unlocked.world.nextTriangleSpawnAtMs).toBe(46_600);
+    expect(unlocked.world.nextTriangleSpawnAtMs).toBe(2_900);
 
     const nextAttempt = stepEnemies(unlocked.world, {
-      stepEndMs: 46_600,
+      stepEndMs: 2_900,
       viewport,
       playerHurtbox: hurtbox,
       playerAlive: true,
     });
 
-    expect(nextAttempt.world.nextTriangleSpawnAtMs).toBe(48_200);
+    expect(nextAttempt.world.nextTriangleSpawnAtMs).toBe(3_800);
   });
 
   it('resolves a hitscan laser once at the fire instant', () => {
@@ -689,7 +690,7 @@ describe('triangle scheduling integration', () => {
     expect(again.hit).toBeNull();
   });
 
-  it('allows at most two charging triangles and waits for arrival order', () => {
+  it('allows at most six charging triangles and waits for arrival order', () => {
     const lane = createBeamLane(200, 100, 1, 0, VIEWPORT);
     const firing = makeTriangle(0, {
       phase: 'charging',
@@ -703,40 +704,20 @@ describe('triangle scheduling integration', () => {
       chargeEndsAtMs: 1_000,
       lane,
     });
-    const firstWaiter = makeTriangle(1, {
-      phase: 'aimed',
-      x: 200,
-      y: 100,
-      stopX: 200,
-      stopY: 100,
-      aimX: 1,
-      aimY: 0,
-      arrivedAtMs: 600,
-      lane,
-    });
-    const secondWaiter = makeTriangle(2, {
-      phase: 'aimed',
-      x: 200,
-      y: 100,
-      stopX: 200,
-      stopY: 100,
-      aimX: 1,
-      aimY: 0,
-      arrivedAtMs: 700,
-      lane,
-    });
-    const thirdWaiter = makeTriangle(3, {
-      phase: 'aimed',
-      x: 200,
-      y: 100,
-      stopX: 200,
-      stopY: 100,
-      aimX: 1,
-      aimY: 0,
-      arrivedAtMs: 800,
-      lane,
-    });
-    const world = worldWithTriangles([firing, firstWaiter, secondWaiter, thirdWaiter]);
+    const waiters = Array.from({ length: 6 }, (_, index) =>
+      makeTriangle(index + 1, {
+        phase: 'aimed',
+        x: 200,
+        y: 100,
+        stopX: 200,
+        stopY: 100,
+        aimX: 1,
+        aimY: 0,
+        arrivedAtMs: 600 + index * 100,
+        lane,
+      }),
+    );
+    const world = worldWithTriangles([firing, ...waiters]);
 
     const firstStep = stepEnemies(world, {
       stepEndMs: 1_000,
@@ -753,11 +734,9 @@ describe('triangle scheduling integration', () => {
 
     expect(phaseAt(firstStep.world, 0)).toBe('firing');
     expect(phaseAt(firstStep.world, 1)).toBe('charging');
-    expect(phaseAt(firstStep.world, 2)).toBe('aimed');
-    expect(phaseAt(firstStep.world, 3)).toBe('aimed');
-    expect(getChargingCount(firstStep.world)).toBe(1);
-    expect(phaseAt(secondStep.world, 2)).toBe('charging');
-    expect(phaseAt(secondStep.world, 3)).toBe('aimed');
-    expect(getChargingCount(secondStep.world)).toBe(2);
+    expect(phaseAt(firstStep.world, 6)).toBe('aimed');
+    expect(getChargingCount(firstStep.world)).toBe(5);
+    expect(phaseAt(secondStep.world, 6)).toBe('charging');
+    expect(getChargingCount(secondStep.world)).toBe(6);
   });
 });

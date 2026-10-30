@@ -36,6 +36,7 @@ export interface TriangleSlot {
   readonly lane: BeamLane | null;
   readonly sizePx: number;
   readonly enteredViewport: boolean;
+  readonly damagedPlayer: boolean;
 }
 
 export interface TriangleSpawnInput {
@@ -64,6 +65,7 @@ export interface TriangleStepResult {
 }
 
 export const TRIANGLE_SIZE_PX = 40;
+const TRIANGLE_SPAWN_ENVELOPE_PX = TRIANGLE_SIZE_PX * Math.SQRT2;
 export const TRIANGLE_APPROACH_BASE_SPEED_PX_PER_SEC = 89.6;
 export const TRIANGLE_APPROACH_SPEED_GROWTH_PX_PER_SEC = 0.128;
 export const TRIANGLE_APPROACH_MAX_SPEED_PX_PER_SEC = 176;
@@ -77,7 +79,7 @@ export const TRIANGLE_STOP_INWARD_FACTOR = 0.35;
 export const TRIANGLE_STOP_LATERAL_FACTOR = 0.25;
 export const TRIANGLE_VIEWPORT_INSET_FACTOR = 0.08;
 export const TRIANGLE_VIEWPORT_INSET_MIN_PX = 36;
-export const TRIANGLE_MAX_WARNINGS = 2;
+export const TRIANGLE_MAX_WARNINGS = 6;
 export const TRIANGLE_STOP_CANDIDATES = 3;
 export const TRIANGLE_SAFETY_LIFETIME_MS = ENEMY_SAFETY_LIFETIME_MS;
 
@@ -153,7 +155,7 @@ export function spawnTriangle(input: TriangleSpawnInput): TriangleSpawn | null {
       continue;
     }
 
-    const spawnPoint = getSpawnPoint(input.viewport, side, alongPx, TRIANGLE_SIZE_PX);
+    const spawnPoint = getSpawnPoint(input.viewport, side, alongPx, TRIANGLE_SPAWN_ENVELOPE_PX);
     const fallback = inwardNormal(side);
     const aim = normalizeDirection(
       stop.x - spawnPoint.x,
@@ -183,6 +185,7 @@ export function spawnTriangle(input: TriangleSpawnInput): TriangleSpawn | null {
         lane: null,
         sizePx: TRIANGLE_SIZE_PX,
         enteredViewport: false,
+        damagedPlayer: false,
       },
       mark: getSpawnMark(side, alongPx, input.spawnedAtMs),
     };

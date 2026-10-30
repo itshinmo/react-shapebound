@@ -2,6 +2,7 @@ import {
   getEnemyHitHalf,
   laneOverlapsHurtbox,
   pickEarliestContact,
+  resolveLaneReflection,
   sweptRedContact,
   type BeamLane,
   type ContactCandidate,
@@ -24,8 +25,6 @@ import {
   type RedSquareSlot,
 } from './enemy-red-square';
 import {
-  ENEMY_SAFETY_LIFETIME_MS,
-  ENEMY_STEP_MS,
   EXIT_MARGIN_PX,
   RED_TARGET_MAX,
   TRIANGLE_TARGET_MAX,
@@ -37,7 +36,7 @@ import {
 } from './enemy-spawn';
 import { createRng } from './rng';
 
-export { ENEMY_SAFETY_LIFETIME_MS, ENEMY_STEP_MS };
+import type { ShieldSegment } from './reflect-shield';
 
 export type EnemyKind = 'red-square' | 'orange-triangle';
 export type EnemySlot = RedSquareSlot | TriangleSlot;
@@ -46,6 +45,28 @@ export interface HitIntent {
   readonly slotId: number;
   readonly kind: EnemyKind;
   readonly atMs: number;
+}
+
+export interface EnemyFire {
+  readonly slotId: number;
+  readonly lane: BeamLane;
+  readonly atMs: number;
+}
+
+export interface EnemyReflection {
+  readonly slotId: number;
+  readonly originX: number;
+  readonly originY: number;
+  readonly contactX: number;
+  readonly contactY: number;
+  readonly incomingLengthPx: number;
+  readonly dirX: number;
+  readonly dirY: number;
+}
+
+export interface EnemyShieldDescriptor {
+  readonly segment: ShieldSegment;
+  readonly chargesAvailable: number;
 }
 
 export interface EnemyWorld {
@@ -66,11 +87,15 @@ export interface EnemyStepInput {
   readonly viewport: ViewportRect;
   readonly playerHurtbox: Hurtbox;
   readonly playerAlive: boolean;
+  readonly shield?: EnemyShieldDescriptor | null;
 }
 
 export interface EnemyStepResult {
   readonly world: EnemyWorld;
   readonly hit: HitIntent | null;
+  readonly fires: readonly EnemyFire[];
+  readonly reflectedFireSlotIds: readonly number[];
+  readonly reflections: readonly EnemyReflection[];
 }
 
 export interface EnemyCounts {
@@ -79,11 +104,11 @@ export interface EnemyCounts {
   readonly triangle: number;
 }
 
-export const ENEMY_SLOT_COUNT = 24;
+export const ENEMY_SLOT_COUNT = 36;
 export const RED_SPAWN_CADENCE_MS = 900;
-export const TRIANGLE_SPAWN_CADENCE_MS = 1_600;
+export const TRIANGLE_SPAWN_CADENCE_MS = RED_SPAWN_CADENCE_MS;
 export const RED_FIRST_SPAWN_MS = 2_000;
-export const TRIANGLE_FIRST_SPAWN_MS = 45_000;
+export const TRIANGLE_FIRST_SPAWN_MS = RED_FIRST_SPAWN_MS;
 export const MAX_RED_SQUARES = RED_TARGET_MAX;
 export const MAX_TRIANGLES = TRIANGLE_TARGET_MAX;
 export const MAX_CHARGING_TRIANGLES = TRIANGLE_MAX_WARNINGS;
@@ -91,11 +116,6 @@ export const POST_HIT_INVULNERABILITY_MS = 500;
 
 interface DamageCandidate extends ContactCandidate {
   readonly kind: EnemyKind;
-}
-
-interface FireEvent {
-  readonly slotId: number;
-  readonly lane: BeamLane;
 }
 
 export function createEnemyWorld(seed: number): EnemyWorld {
@@ -118,11 +138,11 @@ export function createEnemyWorld(seed: number): EnemyWorld {
 
 export function stepEnemies(world: EnemyWorld, input: EnemyStepInput): EnemyStepResult {
   if (!input.playerAlive) {
-    return { world, hit: null };
+    return { world, hit: null, fires: [], reflectedFireSlotIds: [], reflections: [] };
   }
 
   if (!Number.isFinite(input.stepEndMs) || input.stepEndMs < 0) {
-    return { world, hit: null };
+    return { world, hit: null, fires: [], reflectedFireSlotIds: [], reflections: [] };
   }
 
   const slots: (EnemySlot | null)[] = [...world.slots];
@@ -133,7 +153,8 @@ export function stepEnemies(world: EnemyWorld, input: EnemyStepInput): EnemyStep
   const chargingAtArrival = countChargingSlots(slots);
 
   const previousReds = new Map<number, { readonly x: number; readonly y: number }>();
-  const fireEvents: FireEvent[] = [];
+  const previousTriangles = new Map<number, { readonly x: number; readonly y: number }>();
+  const fireEvents: EnemyFire[] = [];
   const newlyArrived: TriangleSlot[] = [];
 
   for (let id = 0; id < slots.length; id += 1) {
@@ -148,6 +169,8 @@ export function stepEnemies(world: EnemyWorld, input: EnemyStepInput): EnemyStep
       slots[id] = stepRedSquare(slot);
       continue;
     }
+
+    previousTriangles.set(slot.id, { x: slot.x, y: slot.y });
 
     const wasApproaching = slot.phase === 'approach';
     const result = stepTriangle(slot, {
@@ -164,7 +187,7 @@ export function stepEnemies(world: EnemyWorld, input: EnemyStepInput): EnemyStep
     slots[id] = result.slot;
 
     if (result.fired && result.slot.lane !== null) {
-      fireEvents.push({ slotId: result.slot.id, lane: result.slot.lane });
+      fireEvents.push({ slotId: result.slot.id, lane: result.slot.lane, atMs: input.stepEndMs });
     }
 
     if (wasApproaching && result.slot.phase === 'aimed') {
@@ -173,6 +196,45 @@ export function stepEnemies(world: EnemyWorld, input: EnemyStepInput): EnemyStep
   }
 
   promoteNewlyArrivedTriangles(slots, newlyArrived, input.stepEndMs, chargingAtArrival);
+
+  const reflections: EnemyReflection[] = [];
+  const reflectedFireSlotIds: number[] = [];
+  const reflectedSlotIds = new Set<number>();
+  const shield = input.shield ?? null;
+  let chargesAvailable =
+    shield === null
+      ? 0
+      : Number.isFinite(shield.chargesAvailable)
+        ? Math.max(0, Math.floor(shield.chargesAvailable))
+        : 0;
+
+  if (shield !== null && chargesAvailable > 0) {
+    for (const event of fireEvents) {
+      if (chargesAvailable === 0) {
+        break;
+      }
+
+      const reflection = resolveLaneReflection(event.lane, shield.segment, input.playerHurtbox);
+
+      if (reflection === null) {
+        continue;
+      }
+
+      reflections.push({
+        slotId: event.slotId,
+        originX: reflection.originX,
+        originY: reflection.originY,
+        contactX: reflection.contactX,
+        contactY: reflection.contactY,
+        incomingLengthPx: reflection.distancePx,
+        dirX: reflection.dirX,
+        dirY: reflection.dirY,
+      });
+      reflectedFireSlotIds.push(event.slotId);
+      reflectedSlotIds.add(event.slotId);
+      chargesAvailable -= 1;
+    }
+  }
 
   const candidates: DamageCandidate[] = [];
 
@@ -202,7 +264,36 @@ export function stepEnemies(world: EnemyWorld, input: EnemyStepInput): EnemyStep
       }
     }
 
+    for (const slot of slots) {
+      if (slot?.kind !== 'orange-triangle' || slot.damagedPlayer) {
+        continue;
+      }
+
+      const previous = previousTriangles.get(slot.id);
+
+      if (previous === undefined) {
+        continue;
+      }
+
+      const contactTime = sweptRedContact(
+        previous.x,
+        previous.y,
+        slot.x,
+        slot.y,
+        slot.sizePx,
+        input.playerHurtbox,
+      );
+
+      if (contactTime !== null) {
+        candidates.push({ slotId: slot.id, kind: 'orange-triangle', contactTime });
+      }
+    }
+
     for (const event of fireEvents) {
+      if (reflectedSlotIds.has(event.slotId)) {
+        continue;
+      }
+
       if (laneOverlapsHurtbox(event.lane, input.playerHurtbox)) {
         candidates.push({
           slotId: event.slotId,
@@ -221,6 +312,12 @@ export function stepEnemies(world: EnemyWorld, input: EnemyStepInput): EnemyStep
       const target = slots[selected.slotId];
 
       if (target?.kind === 'red-square') {
+        slots[selected.slotId] = { ...target, damagedPlayer: true };
+      }
+    } else {
+      const target = slots[selected.slotId];
+
+      if (target?.kind === 'orange-triangle') {
         slots[selected.slotId] = { ...target, damagedPlayer: true };
       }
     }
@@ -312,6 +409,9 @@ export function stepEnemies(world: EnemyWorld, input: EnemyStepInput): EnemyStep
       playerInvulnerableUntilMs,
     },
     hit,
+    fires: fireEvents,
+    reflectedFireSlotIds,
+    reflections,
   };
 }
 
@@ -376,7 +476,10 @@ export function getWarningLanes(world: EnemyWorld): readonly BeamLane[] {
   return lanes;
 }
 
-export function getBeamLanes(world: EnemyWorld): readonly BeamLane[] {
+export function getBeamLanes(
+  world: EnemyWorld,
+  beamLengthOverrides?: ReadonlyMap<number, number>,
+): readonly BeamLane[] {
   const lanes: BeamLane[] = [];
 
   for (const slot of world.slots) {
@@ -384,7 +487,13 @@ export function getBeamLanes(world: EnemyWorld): readonly BeamLane[] {
       continue;
     }
 
-    lanes.push(slot.lane);
+    const override = beamLengthOverrides?.get(slot.id);
+    const lane =
+      override === undefined
+        ? slot.lane
+        : { ...slot.lane, lengthPx: Math.min(slot.lane.lengthPx, override) };
+
+    lanes.push(lane);
 
     if (lanes.length === TRIANGLE_MAX_WARNINGS) {
       break;
