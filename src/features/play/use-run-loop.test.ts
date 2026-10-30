@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { StrictMode, createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createEmptyProgression } from '@/game/progression';
+import { createEmptyProgression, parseProgressionSave } from '@/game/progression';
 import type { ProgressionData, ProgressionRead } from '@/game/progression';
 import { advanceRun, createRun, formatElapsed } from '@/game/run';
 import { createSave } from '@/game/save';
@@ -503,6 +503,64 @@ describe('death and commit', () => {
     expect(fake.write.mock.calls[0]?.[0]).toEqual(createSave(expected, SAVED_AT));
     expect(result.current.snapshot.commit).toBe('saved');
     expect(result.current.committedData).toEqual(expected);
+  });
+
+  it('writes a v2 envelope with zero upgrades from a migrated v1 record', () => {
+    const v1 = {
+      schemaVersion: 1,
+      savedAt: SAVED_AT,
+      data: {
+        bluePoints: 10,
+        bestTimeMs: 2_000,
+        runCount: 3,
+        bossCurrencies: { purple: 1, green: 2, orange: 3 },
+      },
+    };
+    const read = parseProgressionSave(JSON.stringify(v1));
+
+    if (read.kind !== 'valid') {
+      throw new Error('Expected the v1 fixture to migrate.');
+    }
+
+    const { result, fake } = renderRunLoop({ onFrame: dieAt(1_000) }, read);
+
+    runFrames(20);
+
+    const expected = expectedData({
+      bluePoints: 11,
+      bestTimeMs: 2_000,
+      runCount: 4,
+      bossCurrencies: { purple: 1, green: 2, orange: 3 },
+    });
+    const envelope = fake.write.mock.calls[0]?.[0];
+
+    expect(envelope).toEqual(createSave(expected, SAVED_AT));
+    expect(envelope?.schemaVersion).toBe(2);
+    expect(envelope?.data.upgrades).toEqual(createEmptyProgression().upgrades);
+    expect(result.current.snapshot.commit).toBe('saved');
+  });
+
+  it('preserves v2 upgrade levels in the death commit', () => {
+    const upgrades = {
+      barrierCount: 2,
+      movementSpeed: 3,
+      playerSize: 1,
+      arenaSize: 4,
+      reflectCharges: 2,
+      reflectChargeSpeed: 1,
+      laserPierce: 2,
+    };
+    const { result, fake } = renderRunLoop(
+      { onFrame: dieAt(1_000) },
+      { kind: 'valid', data: expectedData({ bluePoints: 3, upgrades }) },
+    );
+
+    runFrames(20);
+
+    const expected = expectedData({ bluePoints: 4, bestTimeMs: 1_000, runCount: 1, upgrades });
+
+    expect(fake.write.mock.calls[0]?.[0]).toEqual(createSave(expected, SAVED_AT));
+    expect(result.current.committedData?.upgrades).toEqual(upgrades);
   });
 
   it('records the death time but zero blue points for a sub-second missing-save death', () => {

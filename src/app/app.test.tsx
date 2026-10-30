@@ -1,5 +1,8 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { SAVE_STORAGE_KEY } from '@/game/save';
 
 import { App } from './app';
 
@@ -118,6 +121,30 @@ describe('App routing', () => {
 
     expect(screen.getByRole('region', { name: 'Play field' })).toBeInTheDocument();
     expect(screen.queryByRole('banner')).not.toBeInTheDocument();
+  });
+
+  it('keeps the save gate focused when navigating to a blocked play route', async () => {
+    const user = userEvent.setup();
+
+    window.localStorage.setItem(SAVE_STORAGE_KEY, '{not json');
+
+    render(<App />);
+
+    const initialize = within(screen.getByRole('main'))
+      .getAllByRole('link', { name: /initialize/i })
+      .at(0);
+
+    if (initialize === undefined) {
+      throw new Error('Expected an INITIALIZE link.');
+    }
+
+    await user.click(initialize);
+
+    const gate = await screen.findByRole('alert');
+
+    expect(gate).toHaveTextContent('SAVED PROGRESS COULD NOT BE READ');
+    expect(gate).toHaveFocus();
+    expect(screen.queryByRole('region', { name: 'Play field' })).not.toBeInTheDocument();
   });
 
   it('renders the not-found screen with a glitched, briefly flipping 404', () => {
